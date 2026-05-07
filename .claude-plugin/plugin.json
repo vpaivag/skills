@@ -1,0 +1,9 @@
+{
+  "name": "vpaivag-skills",
+  "skills": [
+    "./skills/deep-plan",
+    "./skills/execute-plan",
+    "./skills/plan-tracker",
+    "./skills/pr-reviewer"
+  ]
+}
