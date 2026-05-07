@@ -55,23 +55,40 @@ npx skills@latest add vpaivag/skills -a claude-code
 
 ### As a Claude Code plugin
 
-This repo is a Claude Code plugin marketplace. Add the marketplace, then install the `skills` plugin:
+This repo is a Claude Code plugin marketplace. Run each command on its own line at the Claude Code prompt:
 
 ```
 /plugin marketplace add vpaivag/skills
+```
+
+```
 /plugin install skills@vpaivag
 ```
 
-Update later with:
+```
+/reload-plugins
+```
+
+The first command registers the marketplace (named `vpaivag`) by fetching `.claude-plugin/marketplace.json` from this repo. The second installs the `skills` plugin from it. The third activates the plugin in your current session — without a restart.
+
+Verify it's registered:
+
+```
+/plugin marketplace list
+```
+
+If `/plugin install skills@vpaivag` returns `Marketplace "vpaivag" not found`, the `marketplace add` step didn't complete — re-run it and check the output.
+
+Update later:
 
 ```
 /plugin marketplace update vpaivag
 ```
 
-Or point Claude Code at a local clone:
+Or use a local clone instead of GitHub:
 
 ```
-/plugin marketplace add /path/to/skills
+/plugin marketplace add /absolute/path/to/skills
 ```
 
 ## Skills
