@@ -1,6 +1,6 @@
 ---
 name: deep-plan
-description: Produce a thorough, self-contained implementation plan for a coding task. Explores the codebase read-only, considers alternatives, enumerates risks, and writes a plan suite (an index plus one or more chunk files) that can be executed in a fresh Claude Code session via /execute-plan. Detects under-decomposed tasks and offers to split them. Use this when the user invokes /deep-plan or asks for a deep plan before implementation.
+description: Produce a thorough, self-contained implementation plan for a coding task. Explores the codebase read-only, considers alternatives, enumerates risks, and writes a plan suite (an index plus one or more chunk files) that can be executed in a fresh Claude Code session via /execute-plan. Sizes the task up front so trivial work isn't over-planned, and detects under-decomposed tasks to offer splits. Use this when the user invokes /deep-plan or asks for a deep plan before implementation.
 ---
 
 # /deep-plan
@@ -26,6 +26,23 @@ Before Phase 2, read `CLAUDE.md` at the project root if it exists. It contains r
 ## Phases
 
 Execute these phases in order. Do not skip ahead. Do not collapse multiple phases into one response.
+
+### Phase 0 — Size
+
+Before restating, briefly classify the task:
+
+- **Small** — 1–2 files, mechanical or repetitive, no real design choices (e.g. rename a field, add an index, regex-style update across files).
+- **Medium** — multiple files or one component with real but bounded design choices.
+- **Large** — cross-cutting, or spans multiple components/domains.
+
+State your verdict in one line and the reason. The user can correct it.
+
+Size affects only **how much detail Phases 3 (Design) and 5 (Risk) need**:
+
+- Small → 1–2 sentences each is fine; you may still note one alternative considered and one realistic risk.
+- Medium / Large → full treatment as described below.
+
+Phases 1, 2, 4, 6, 6.5, 7, and 8 are unchanged regardless of size — restating, exploring, specifying, verifying, decomposition-checking, persisting, and confirming are non-negotiable. The size verdict is a depth dial, not a skip switch.
 
 ### Phase 1 — Restate
 
@@ -64,11 +81,12 @@ If Phase 1 had blocking ambiguities that exploration resolved, mark them resolve
 
 ### Phase 3 — Design
 
-Generate **at least two distinct approaches** to the problem. For each:
-- 1–3 sentence description
-- Tradeoffs on: complexity, performance, blast radius, maintainability, reversibility
+Consider the design space before committing.
 
-Pick one approach. Explicitly state **why this one and why not the others**. The "why not" matters as much as the "why."
+- If 2+ approaches are genuinely viable, present each with a 1–3 sentence description and tradeoffs (complexity, performance, blast radius, maintainability, reversibility). Pick one and explain **why this one and why not the others** — the "why not" matters as much as the "why."
+- If only one approach is genuinely viable, name the alternatives you considered and why each is a non-starter (wrong tool for the constraints, blocked by an existing decision, prohibitive cost, etc.). One sentence per rejected alternative is enough.
+
+The point is to prove you considered alternatives — not to manufacture strawmen. If you find yourself inventing a weak alternative just to have two, that's a signal there is only one viable path; document that honestly instead. For Small-sized tasks (Phase 0), this can be very brief.
 
 ### Phase 4 — Specify
 
