@@ -55,15 +55,24 @@ npx skills@latest add vpaivag/skills -a claude-code
 
 ### As a Claude Code plugin
 
-This repo ships a `.claude-plugin/plugin.json` manifest, so you can install the whole bundle as a single Claude Code plugin and get all skills at once.
-
-From inside Claude Code:
+This repo is a Claude Code plugin marketplace. Add the marketplace, then install the `skills` plugin:
 
 ```
-/plugin install vpaivag/skills
+/plugin marketplace add vpaivag/skills
+/plugin install skills@vpaivag
 ```
 
-Or point Claude Code at a local clone of this repo via your plugin configuration. Updating is then just `git pull` in the cloned repo.
+Update later with:
+
+```
+/plugin marketplace update vpaivag
+```
+
+Or point Claude Code at a local clone:
+
+```
+/plugin marketplace add /path/to/skills
+```
 
 ## Skills
 
@@ -132,6 +141,15 @@ Three modes:
 - **Confirm** a healthy `CLAUDE.md` doesn't need changes (avoids over-editing).
 
 → [`skills/claude-md-refactor`](./skills/claude-md-refactor)
+
+## Other useful skills
+
+This bundle isn't the only one worth installing. [`mattpocock/skills`](https://github.com/mattpocock/skills) has a great companion set — examples:
+
+- **`grill-me`** — interview-style stress test that drills into a plan or design until every branch of the decision tree is resolved.
+- **`improve-codebase-architecture`** — guided pass for spotting and improving structural problems across a codebase.
+
+See the full list at [github.com/mattpocock/skills](https://github.com/mattpocock/skills).
 
 ## Layout
 

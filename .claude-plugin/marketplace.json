@@ -1,0 +1,26 @@
+{
+  "name": "vpaivag",
+  "description": "vpaivag's personal Claude Code plugins.",
+  "owner": {
+    "name": "vpaivag",
+    "email": "vpaivagross@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "skills",
+      "source": "./",
+      "description": "Skills for planning, executing, tracking, and reviewing software work — plus a CLAUDE.md refactor utility.",
+      "version": "0.1.0",
+      "author": {
+        "name": "vpaivag",
+        "email": "vpaivagross@gmail.com"
+      },
+      "homepage": "https://github.com/vpaivag/skills",
+      "repository": "https://github.com/vpaivag/skills",
+      "license": "MIT",
+      "category": "workflow",
+      "keywords": ["skills", "planning", "code-review", "claude-md"],
+      "tags": ["planning", "review", "execution"]
+    }
+  ]
+}

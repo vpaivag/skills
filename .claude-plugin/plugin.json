@@ -1,5 +1,20 @@
 {
-  "name": "vpaivag-skills",
+  "name": "skills",
+  "description": "Skills for planning, executing, tracking, and reviewing software work — plus a CLAUDE.md refactor utility.",
+  "version": "0.1.0",
+  "author": {
+    "name": "vpaivag",
+    "email": "vpaivagross@gmail.com"
+  },
+  "homepage": "https://github.com/vpaivag/skills",
+  "repository": "https://github.com/vpaivag/skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "planning",
+    "code-review",
+    "claude-md"
+  ],
   "skills": [
     "./skills/claude-md-refactor",
     "./skills/deep-plan",
