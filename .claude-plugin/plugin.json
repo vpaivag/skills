@@ -1,6 +1,7 @@
 {
   "name": "vpaivag-skills",
   "skills": [
+    "./skills/claude-md-refactor",
     "./skills/deep-plan",
     "./skills/execute-plan",
     "./skills/plan-tracker",
