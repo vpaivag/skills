@@ -5,6 +5,7 @@
     "./skills/deep-plan",
     "./skills/execute-plan",
     "./skills/plan-tracker",
-    "./skills/pr-reviewer"
+    "./skills/pr-reviewer",
+    "./skills/review-plan"
   ]
 }

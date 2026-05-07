@@ -2,7 +2,16 @@
 
 Personal collection of agent skills for planning, executing, tracking, and reviewing software engineering work — plus a utility for keeping `CLAUDE.md` files lean.
 
-Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. They are designed to compose: plan with `/deep-plan`, run with `/execute-plan`, check progress with `/plan-tracker`, review the result with `/pr-reviewer`.
+Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. They're designed to compose into one loop:
+
+```
+/deep-plan      →  explore the codebase, write a self-contained plan suite
+/plan-tracker   →  see what's runnable next
+/execute-plan   →  hand a chunk to a fresh session, implement + verify
+/review-plan    →  audit whether the suite actually delivered what it promised
+```
+
+Plus two standalone skills: `/pr-reviewer` for expert-level pull request reviews, and `/claude-md-refactor` to keep your repo's `CLAUDE.md` from quietly eating every session's context.
 
 ## Contents
 
@@ -13,6 +22,7 @@ Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on d
   - [deep-plan](#deep-plan)
   - [execute-plan](#execute-plan)
   - [plan-tracker](#plan-tracker)
+  - [review-plan](#review-plan)
   - [pr-reviewer](#pr-reviewer)
   - [claude-md-refactor](#claude-md-refactor)
 - [Layout](#layout)
@@ -88,6 +98,16 @@ Read-only status view for plan suites in the current project. Detects the active
 
 → [`skills/plan-tracker`](./skills/plan-tracker)
 
+### review-plan
+
+**Trigger:** `/review-plan` or asking "is the plan actually done?", "did we deliver what the plan promised?", "is the suite status honest?".
+
+Read-only audit that closes the planning loop. Compares a suite's `index.md` goal and per-chunk acceptance criteria against the actual git diff since the suite was created, then reports goal alignment, coverage gaps, drift (changes not traceable to any chunk), and status-sanity issues (chunks marked `done` whose criteria don't appear satisfied in the code).
+
+Pairs with `plan-tracker`: tracker shows recorded status, review-plan checks whether that status is telling the truth. Never edits the plan, never marks chunks done, never touches code.
+
+→ [`skills/review-plan`](./skills/review-plan)
+
 ### pr-reviewer
 
 **Trigger:** asking to review a PR, look at a pull request, do a code review, check a branch before merge, or "what do you think of #123 / this branch?".
@@ -123,4 +143,5 @@ skills/
   execute-plan/SKILL.md
   plan-tracker/SKILL.md
   pr-reviewer/SKILL.md
+  review-plan/SKILL.md
 ```
