@@ -1,11 +1,13 @@
 ---
 name: deep-plan
-description: Produce a thorough, self-contained implementation plan for a coding task. Explores the codebase read-only, considers alternatives, enumerates risks, and writes a plan file (or a suite of plan files for larger tasks) that can be executed in a fresh Claude Code session via /execute-plan. Detects under-decomposed tasks and offers to split them. Use this when the user invokes /deep-plan or asks for a deep plan before implementation.
+description: Produce a thorough, self-contained implementation plan for a coding task. Explores the codebase read-only, considers alternatives, enumerates risks, and writes a plan suite (an index plus one or more chunk files) that can be executed in a fresh Claude Code session via /execute-plan. Detects under-decomposed tasks and offers to split them. Use this when the user invokes /deep-plan or asks for a deep plan before implementation.
 ---
 
 # /deep-plan
 
-Produce a rigorous implementation plan and persist it as a self-contained file (or set of files for decomposed work) that can be executed by a fresh Claude Code session with no prior conversation context.
+Produce a rigorous implementation plan and persist it as a self-contained suite of files that can be executed by a fresh Claude Code session with no prior conversation context.
+
+Every plan is written as a **suite directory** containing an `index.md` and one or more chunk files — even when there is a single chunk. This keeps the on-disk shape uniform for `execute-plan` and `plan-tracker`.
 
 ## Operating mode
 
@@ -74,36 +76,7 @@ Pick one approach. Explicitly state **why this one and why not the others**. The
 - **Every interface that changes**: function signatures, types, schemas, API contracts
 - **Order of operations**: numbered steps with explicit dependencies between steps
 
-#### Code in plans — strict rule
-
-Include in plans:
-- **Reference snippets** from existing code (≤10 lines) showing patterns the executor should follow
-- **Interface specifications**: function signatures, type definitions, schema fields, API contracts
-- **Pseudocode** for non-obvious algorithmic decisions (≤5 lines, only when prose would be ambiguous)
-
-Do NOT include in plans:
-- Implementation bodies (function internals, error message strings, validation logic, control flow)
-- Constants or magic numbers — name the concept, let the executor pick the value
-- Anything the executor would write themselves given the interface spec
-
-**Negative example** (do not do this):
-
-```ruby
-def validate_segment!(name, value)
-  raise ArgumentError, "#{name} must be a String" unless value.is_a?(String)
-  raise ArgumentError, "#{name} can't be blank" if value.strip.empty?
-  INVALID_CHARS.each do |c|
-    raise ArgumentError, "#{name} cannot contain '#{c}'" if value.include?(c)
-  end
-  raise ArgumentError, "#{name} contains control chars" if value =~ /[[:cntrl:]]/
-end
-```
-
-**Positive example** (do this instead):
-
-> Add `Topics.validate_segment!(name, value)`: raises `ArgumentError` if value is not a String, is blank, contains MQTT wildcards (`+`, `#`, `/`), or contains control characters. Used by `installation_sync` to validate inputs.
-
-If you find yourself writing more than ~5 lines of new implementation code, stop and convert to prose specification. The executor designs implementation; the plan defines contracts and intent.
+Follow the code-in-plans rule when describing changes. The rule and examples live in [PLAN-FORMAT.md](./PLAN-FORMAT.md).
 
 ### Phase 5 — Risk
 
@@ -133,7 +106,7 @@ Soft signals that *suggest* (don't gate) decomposition:
 - Implementation Steps > ~10
 - Acceptance Criteria fall into clearly distinct groups
 
-If the plan should NOT split, proceed to Phase 7 unchanged.
+If the plan should NOT split, proceed to Phase 7 with a single chunk.
 
 If it SHOULD split, present a **lightweight decomposition** and ask the user.
 
@@ -169,88 +142,33 @@ Ask in plain text: "How would you like to decompose this?" Wait for response, ac
 
 ### Phase 7 — Persist
 
+Every plan — whether single-chunk or multi-chunk — is written to a suite directory.
+
 1. Get a timestamp: `date +%Y-%m-%d-%H%M%S`.
 2. Derive a kebab-case slug (≤6 words) from the task essence.
-3. Ensure the plans directory exists: `mkdir -p .claude/plans`.
+3. Create the suite directory: `mkdir -p .claude/plans/<timestamp>-<feature-slug>`.
 4. If a `.gitignore` exists at the project root and does not already contain `.claude/plans/`, append the line `.claude/plans/` to it. If `.gitignore` does not exist, create it with that single line.
 
-#### If single plan (no split)
+#### Single-chunk suite
 
-Write the plan file to `.claude/plans/<timestamp>-<slug>.md` using the structure below.
+Write two files inside the suite directory:
 
-```markdown
-# Plan: <Title>
+- `index.md` — using the single-chunk format in [INDEX-FORMAT.md](./INDEX-FORMAT.md).
+- `plan.md` — the chunk file itself, using the format in [PLAN-FORMAT.md](./PLAN-FORMAT.md). The chunk's frontmatter `Depends on:` is `(none)` and `Part of suite:` points to the sibling `index.md`.
 
-## Context
-<Restated problem with assumptions resolved.>
+#### Multi-chunk suite
 
-## Approach
-<Chosen approach in 2–4 sentences. Brief mention of what was rejected and why.>
+Write the index plus one chunk file per chunk:
 
-## Files Changed
-- `<path>`: <one-line intent>
-
-## Implementation Steps
-1. <Step detailed enough that an executor with no prior context can do it. Follow the code-in-plans rule strictly.>
-
-## Risks & Edge Cases
-- <risk>: <mitigation>
-
-## Acceptance Criteria
-- [ ] <objective, verifiable criterion>
-```
-
-#### If split into N chunks
-
-Create a suite directory: `.claude/plans/<timestamp>-<feature-slug>/`.
-
-Write an index file at `.claude/plans/<timestamp>-<feature-slug>/index.md`:
-
-```markdown
-# Suite: <Feature name>
-
-## Goal
-<1–2 sentences describing the overall feature/goal.>
-
-## Chunks
-1. **<chunk-name>** — `<chunk-filename>.md`
-   - Status: pending
-   - Depends on: (none) | <chunk-name>, <chunk-name>
-2. **<chunk-name>** — `<chunk-filename>.md`
-   - Status: pending
-   - Depends on: <chunk-name>
-```
-
-Write each chunk file at `.claude/plans/<timestamp>-<feature-slug>/<chunk-filename>.md` using the same template as a single plan, with three additions at the top (under the title):
-
-```markdown
-# Plan: <Chunk Title>
-
-> **Status:** pending
-> **Depends on:** (none) | <chunk-name>, <chunk-name>
-> **Part of suite:** `<timestamp>-<feature-slug>/index.md`
-
-## Context
-...
-```
+- `index.md` — using the multi-chunk format in [INDEX-FORMAT.md](./INDEX-FORMAT.md), listing each chunk with its filename, status `pending`, and dependencies.
+- `<chunk-filename>.md` per chunk — using the format in [PLAN-FORMAT.md](./PLAN-FORMAT.md). Use kebab-case filenames derived from chunk names (e.g. `listener.md`, `sync-job.md`).
 
 Each chunk file MUST be self-contained. The executor for chunk B should not need to read chunk A's file — only the parts of chunk A's *output in the codebase* that B depends on. State those dependencies clearly in chunk B's Context section.
 
 ### Phase 8 — Confirm
 
-Print a concise summary:
+Print a concise summary. Use the same shape for single- and multi-chunk suites; only the chunk count differs.
 
-**For single plan:**
-```
-📋 Plan summary
-   File: <path>
-   Approach: <one-line description>
-   Files to change: <count>
-   Risks identified: <count>
-   Acceptance criteria: <count>
-```
-
-**For suite:**
 ```
 📋 Suite summary
    Index: <path-to-index>
@@ -259,6 +177,8 @@ Print a concise summary:
      1. <chunk-name> — <files> files, <criteria> criteria
      2. ...
 ```
+
+For a single-chunk suite the chunk list still appears (one entry).
 
 Then call `AskUserQuestion`:
 - **Question**: "Plan written. Ready to execute, revise, or discard?"
@@ -269,32 +189,24 @@ Then call `AskUserQuestion`:
 
 #### If the user picks Approve
 
-**For single plan**, print:
+Print:
 
 ```
 ✅ Approved.
 
-To execute in a fresh session with clean context, copy this and run it from the project root in a new terminal:
-
-  claude "/execute-plan <path>"
-```
-
-**For suite**, print:
-
-```
-✅ Approved.
-
-This is a suite of <N> chunks. Execute them in dependency order:
+Execute chunks in dependency order from the project root in a fresh terminal:
 
   Runnable now (no dependencies):
-    claude "/execute-plan <path-to-chunk-1>"
-    claude "/execute-plan <path-to-chunk-2>"
+    claude "/execute-plan <path-to-chunk>"
+    ...
 
   Blocked (run after dependencies complete):
-    claude "/execute-plan <path-to-chunk-3>"  (depends on: chunk-1, chunk-2)
+    claude "/execute-plan <path-to-chunk>"  (depends on: <deps>)
 
 Use /plan-tracker to see live status across the suite.
 ```
+
+For a single-chunk suite there will be exactly one entry under "Runnable now" and no "Blocked" section.
 
 End your turn.
 
@@ -302,12 +214,11 @@ End your turn.
 
 Ask in plain text: "What would you like to change?"
 
-After the user responds, update the plan file(s) in place to incorporate the changes. If the revision requires additional exploration, perform it read-only first, then update. If the revision changes the decomposition (e.g. "actually merge chunks 2 and 3"), restructure the suite directory accordingly. Then return to the start of Phase 8 (re-print summary, re-call `AskUserQuestion`). Loop until Approve or Discard.
+After the user responds, update the plan files in place to incorporate the changes. If the revision requires additional exploration, perform it read-only first, then update. If the revision changes the decomposition (e.g. "actually merge chunks 2 and 3", or "split this into two chunks"), restructure the suite directory accordingly — including renaming/recreating `plan.md` ↔ named chunk files as needed, and updating `index.md`. Then return to the start of Phase 8 (re-print summary, re-call `AskUserQuestion`). Loop until Approve or Discard.
 
 #### If the user picks Discard
 
-For single plan: `rm <path>`.
-For suite: `rm -rf <suite-directory>`.
+Delete the suite directory: `rm -rf <suite-directory>`.
 
 Confirm:
 
@@ -319,10 +230,11 @@ End your turn.
 
 ## Constraints (re-emphasis)
 
-- Do not write or edit any files except plan files in Phase 7 and `.gitignore` in Phase 7.
+- Do not write or edit any files except the suite directory contents in Phase 7 and `.gitignore` in Phase 7.
 - Do not run any command that modifies repository state during exploration.
 - Do not skip or collapse phases into a single response.
 - Do not print the execute command before Phase 8 approval.
 - Do not silently fill in missing requirements — ask the user in Phase 1, or document them as explicit assumptions.
 - Do not write implementation bodies in plans — interfaces and intent only. The executor designs implementation.
 - Do not silently update Phase 1 mid-flight — announce the change visibly per the Phase 2 end-check.
+- Always emit a suite directory with `index.md`, even for single-chunk plans. Never write a bare `.md` file directly under `.claude/plans/`.

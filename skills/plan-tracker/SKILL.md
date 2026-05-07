@@ -7,6 +7,8 @@ description: Read-only status view for plan suites in the current project. Detec
 
 Show the current state of plan suites in this project. **Read-only** — this skill never modifies any plan file.
 
+Every plan produced by `/deep-plan` is a suite (a directory containing `index.md` and one or more chunk files), including single-chunk plans. This tracker operates on every such suite uniformly.
+
 ## Operating mode
 
 This skill is **strictly read-only**. Do not use `Edit`, `Write`, `MultiEdit`, or any `Bash` command that modifies files or repository state. Use `Read`, `Glob`, `Grep`, and read-only `Bash` (`ls`, `find`, `cat`) only.
@@ -21,8 +23,6 @@ This skill requires the `AskUserQuestion` tool. If it is not available, stop imm
 
 Look for plan suites in `.claude/plans/`. A suite is a subdirectory containing an `index.md` file.
 
-Single plans (`.md` files directly under `.claude/plans/`, not inside a subdirectory) are **not tracked** by this skill — the tracker only operates on suites.
-
 Run roughly: `find .claude/plans -name index.md -type f`
 
 For each suite found, parse its index to determine:
@@ -30,11 +30,13 @@ For each suite found, parse its index to determine:
 - Goal (from the `## Goal` section)
 - Chunk list with name, status, dependencies (from the `## Chunks` section)
 
+If a bare `.md` file exists directly under `.claude/plans/` (not inside a suite directory), it's a legacy single-plan from before the suite-everywhere refactor. Note it under "Legacy plans (untracked)" but do not parse it. Suggest the user re-run `/deep-plan` if they want to track it.
+
 If no suites exist, print:
 ```
 No plan suites found in .claude/plans/.
 
-(Single plans are not tracked. Use /deep-plan to create a new plan.)
+Use /deep-plan to create a new plan.
 ```
 End your turn.
 
