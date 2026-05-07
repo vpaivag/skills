@@ -26,6 +26,7 @@ Plus two standalone skills: `/pr-reviewer` for expert-level pull request reviews
   - [pr-reviewer](#pr-reviewer)
   - [claude-md-refactor](#claude-md-refactor)
 - [Layout](#layout)
+- [Contributing](#contributing)
 
 ## Install
 
@@ -180,3 +181,12 @@ skills/
   pr-reviewer/SKILL.md
   review-plan/SKILL.md
 ```
+
+## Contributing
+
+Hit unexpected behaviour from one of these skills, or have an idea for an improvement? Open a GitHub issue — that's the channel for both bug reports and proposals.
+
+- **Bug / unexpected behaviour:** use the [Bug report](.github/ISSUE_TEMPLATE/bug_report.md) template. Include the skill name, what you expected, what happened, and a minimal repro if you have one.
+- **Improvement / new skill idea:** use the [Improvement](.github/ISSUE_TEMPLATE/improvement.md) template. Describe the use case first, then the proposed change.
+
+PRs are welcome too, but for anything beyond a small fix it's worth opening an issue first so we can align on the approach before you spend time on it.
