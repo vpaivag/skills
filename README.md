@@ -4,12 +4,23 @@ Personal collection of agent skills for planning, executing, tracking, and revie
 
 Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. They're designed to compose into one loop:
 
+```mermaid
+flowchart TD
+    intake[/intake/]
+    simple[/simple-plan/]
+    deep[/deep-plan/]
+    tracker[/plan-tracker/]
+    execute[/execute-plan/]
+    review[/review-plan/]
+
+    intake -->|straightforward| simple
+    intake -->|ADR-gate fires| deep
+    deep --> tracker
+    tracker --> execute
+    execute --> review
 ```
-/deep-plan      →  explore the codebase, write a self-contained plan suite
-/plan-tracker   →  see what's runnable next
-/execute-plan   →  hand a chunk to a fresh session, implement + verify
-/review-plan    →  audit whether the suite actually delivered what it promised
-```
+
+`/intake` is the recommended front door — it gathers context and points you at the right planner. You can still invoke `/deep-plan` or `/simple-plan` directly if you already know which one fits.
 
 Plus two standalone skills: `/pr-reviewer` for expert-level pull request reviews, and `/claude-md-refactor` to keep your repo's `CLAUDE.md` from quietly eating every session's context.
 
@@ -19,6 +30,8 @@ Plus two standalone skills: `/pr-reviewer` for expert-level pull request reviews
   - [Via the skills CLI](#via-the-skills-cli)
   - [As a Claude Code plugin](#as-a-claude-code-plugin)
 - [Skills](#skills)
+  - [intake](#intake)
+  - [simple-plan](#simple-plan)
   - [deep-plan](#deep-plan)
   - [execute-plan](#execute-plan)
   - [plan-tracker](#plan-tracker)
@@ -94,6 +107,29 @@ Or use a local clone instead of GitHub:
 
 ## Skills
 
+### intake
+
+**Trigger:** `/intake` or asking to "start a new task", "scope this out", or wanting help deciding whether a task needs a deep plan.
+
+Short, focused Q&A front door for any new task. Asks up to a handful of clarifying questions, writes a `context.md` capturing the task and the resolved assumptions, then **recommends** either `/simple-plan` or `/deep-plan` based on an ADR-gate (hard-to-reverse, surprising-without-context, or real-tradeoff). The downstream planner adopts the same suite directory, so no context is lost between intake and planning.
+
+Highlights:
+- **Capped questions.** Won't grill you — gathers just enough to disambiguate.
+- **Picks the right planner.** ADR-gate rules pick `/deep-plan` only when it's actually warranted, otherwise routes to `/simple-plan`.
+- **Hands off cleanly.** Writes `context.md` into a suite dir the planner picks up automatically.
+
+→ [`skills/intake`](./skills/intake)
+
+### simple-plan
+
+**Trigger:** `/simple-plan` or asking for a lightweight plan for a straightforward task.
+
+Lightweight planner for mechanical or bounded tasks where `/deep-plan`'s full Restate → Explore → Design → Specify → Risk → Verify treatment is overkill. Produces a single `simple-plan.md` in a suite directory and, if you approve, implements it in the same session — no `/execute-plan` handoff, no chunk decomposition, no `index.md` (so `/plan-tracker` and `/execute-plan` ignore it by design).
+
+Use this when the work is mechanical (rename a field across a codebase), a small bug fix, a one-file addition, or otherwise lacks real design choices. If a task turns out to be deeper than expected, switch to `/deep-plan`.
+
+→ [`skills/simple-plan`](./skills/simple-plan)
+
 ### deep-plan
 
 **Trigger:** `/deep-plan` or asking for a deep/thorough plan before implementation.
@@ -102,7 +138,9 @@ Produces a rigorous, self-contained implementation plan for a coding task. Explo
 
 Highlights:
 - **Read-only during planning.** No edits, no git mutations, no side effects until the final write phase.
-- **Right-sizes the work.** Trivial tasks don't get over-planned; under-decomposed tasks get split into multiple chunks with explicit dependencies.
+- **Adopts intake context when present.** If invoked on (or after) an `/intake` run, it picks up the suite dir and seeds Restate from `context.md`. Works standalone too.
+- **User checkpoint on real tradeoffs.** When ≥2 alternatives are genuinely viable, asks you which to plan instead of locking in silently.
+- **Detects under-decomposition.** Suggests splits when a plan contains multiple internally-coherent units of work.
 - **Hand-off ready.** Output is designed to be executed via `/execute-plan` with zero context loss.
 
 → [`skills/deep-plan`](./skills/deep-plan)
@@ -177,9 +215,11 @@ skills/
   claude-md-refactor/SKILL.md
   deep-plan/SKILL.md
   execute-plan/SKILL.md
+  intake/SKILL.md
   plan-tracker/SKILL.md
   pr-reviewer/SKILL.md
   review-plan/SKILL.md
+  simple-plan/SKILL.md
 ```
 
 ## Contributing

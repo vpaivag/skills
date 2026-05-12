@@ -19,8 +19,10 @@
     "./skills/claude-md-refactor",
     "./skills/deep-plan",
     "./skills/execute-plan",
+    "./skills/intake",
     "./skills/plan-tracker",
     "./skills/pr-reviewer",
-    "./skills/review-plan"
+    "./skills/review-plan",
+    "./skills/simple-plan"
   ]
 }
