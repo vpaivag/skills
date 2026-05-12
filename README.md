@@ -11,15 +11,15 @@ flowchart TD
     deep[/deep-plan/]
     execute[/execute-plan/]
     review[/review-plan/]
-    tracker([/plan-tracker — status helper/])
+    tracker(plan-tracker)
 
     intake -->|straightforward| simple
     intake -->|ADR-gate fires| deep
     deep --> execute
     execute --> review
 
-    tracker -.observes.-> deep
-    tracker -.observes.-> execute
+    tracker -.reads-output.-> deep
+    tracker -.tracks-changes.-> execute
 
     classDef helper fill:#f5f5f5,stroke:#999,stroke-dasharray:4 3,color:#555
     class tracker helper
