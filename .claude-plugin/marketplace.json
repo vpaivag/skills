@@ -10,7 +10,7 @@
       "name": "skills",
       "source": "./",
       "description": "Skills for planning, executing, tracking, and reviewing software work — plus a CLAUDE.md refactor utility.",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "author": {
         "name": "vpaivag",
         "email": "vpaivagross@gmail.com"
