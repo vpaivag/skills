@@ -1,6 +1,6 @@
 ---
 name: deep-plan
-description: Produce a thorough, self-contained implementation plan for a coding task. Explores the codebase read-only, considers alternatives, enumerates risks, and writes a plan suite (an index plus one or more chunk files) that can be executed in a fresh Claude Code session via /execute-plan. Sizes the task up front so trivial work isn't over-planned, and detects under-decomposed tasks to offer splits. Use this when the user invokes /deep-plan or asks for a deep plan before implementation.
+description: Produce a thorough, self-contained implementation plan for a coding task. Explores the codebase read-only, considers alternatives, enumerates risks, and writes a plan suite (an index plus one or more chunk files) that can be executed in a fresh Claude Code session via /execute-plan. Detects under-decomposed tasks to offer splits. Use this when the user invokes /deep-plan or asks for a deep plan before implementation.
 ---
 
 # /deep-plan
@@ -11,7 +11,7 @@ Every plan is written as a **suite directory** containing an `index.md` and one 
 
 ## Operating mode
 
-**This skill is READ-ONLY during phases 1–6.** You may use `Read`, `Glob`, `Grep`, and read-only `Bash` commands (e.g. `git log`, `git diff --stat`, `find`, `cat`, `ls`). You must NOT use `Edit`, `Write`, or `MultiEdit`, and you must not run any `Bash` command that modifies files, git state, or external systems. The only writes permitted are in Phase 7 (creating plan files and updating `.gitignore`) and Phase 8 (deleting plan files on user discard).
+**This skill is READ-ONLY during stages Restate through Verify.** You may use `Read`, `Glob`, `Grep`, and read-only `Bash` commands (e.g. `git log`, `git diff --stat`, `find`, `cat`, `ls`). You must NOT use `Edit`, `Write`, or `MultiEdit`, and you must not run any `Bash` command that modifies files, git state, or external systems. The only writes permitted are in Persist (creating plan files and updating `.gitignore`) and Confirm (deleting plan files on user discard).
 
 If you find yourself wanting to edit during exploration, stop and add the desired edit to the plan instead.
 
@@ -21,38 +21,54 @@ This skill requires the `AskUserQuestion` tool. If it is not available, stop imm
 
 ## Project conventions
 
-Before Phase 2, read `CLAUDE.md` at the project root if it exists. It contains references to other documentation — follow those references and read the linked docs. Treat `CLAUDE.md` and its referenced docs as authoritative project context that must be honored in the plan.
+Before Explore, read `CLAUDE.md` at the project root if it exists. It contains references to other documentation — follow those references and read the linked docs. Treat `CLAUDE.md` and its referenced docs as authoritative project context that must be honored in the plan.
 
-## Phases
+## Stages
 
-Execute these phases in order. Do not skip ahead. Do not collapse multiple phases into one response.
+Execute these stages in order. Do not skip ahead. Do not collapse multiple stages into one response.
 
-### Phase 0 — Size
+### Stage: Adopt
 
-Before restating, briefly classify the task:
+Before restating, decide whether this invocation **adopts** an existing intake-produced suite directory or **mints** a fresh one later in Persist. The full adoption contract — detection rules, refusal behavior, and malformed-input handling — lives in [`../intake/CONTEXT-FORMAT.md`](../intake/CONTEXT-FORMAT.md) under "Suite-dir adoption protocol". Implement that protocol; the summary below is non-authoritative.
 
-- **Small** — 1–2 files, mechanical or repetitive, no real design choices (e.g. rename a field, add an index, regex-style update across files).
-- **Medium** — multiple files or one component with real but bounded design choices.
-- **Large** — cross-cutting, or spans multiple components/domains.
+Detection (per the protocol):
 
-State your verdict in one line and the reason. The user can correct it.
+1. If invoked with an argument that is an existing directory under `.claude/plans/` containing a `context.md`, **adopt** it.
+2. If invoked with no argument and exactly one directory under `.claude/plans/` contains a `context.md`, no `index.md`, and no `simple-plan.md`, **adopt** that directory.
+3. Otherwise, **mint** — defer creation to Persist as usual.
 
-Size affects only **how much detail Phases 3 (Design) and 5 (Risk) need**:
+Refusal rule: if the candidate suite dir already contains an `index.md`, **refuse and ask the user** before doing anything else (e.g. "An existing plan is present — overwrite, write a new suite, or cancel?"). Overwriting is destructive and must not happen silently.
 
-- Small → 1–2 sentences each is fine; you may still note one alternative considered and one realistic risk.
-- Medium / Large → full treatment as described below.
+On adoption:
 
-Phases 1, 2, 4, 6, 6.5, 7, and 8 are unchanged regardless of size — restating, exploring, specifying, verifying, decomposition-checking, persisting, and confirming are non-negotiable. The size verdict is a depth dial, not a skip switch.
+1. Read `context.md` before any other action.
+2. Print the acknowledgment line at the top of this response:
+   ```
+   📥 Adopted intake context from <path>/context.md
+   ```
+3. Carry the adopted `context.md` into Restate — its `## Task`, assumptions, and constraints seed the restatement.
+4. Write all Persist outputs (`index.md` + chunk files) into this same directory; do **not** mint a new one.
 
-### Phase 1 — Restate
+Malformed `context.md` (missing H1, frontmatter, or `## Task`): log `⚠ Ignoring malformed context.md at <path> — proceeding without it.` and proceed with a normal Restate, but still write outputs into the existing dir.
+
+### Stage: Restate
 
 In your own words, restate the task the user asked for. Then list:
 - **Assumptions** you're making (bullets)
 - **Ambiguities** you need to resolve (questions)
 
-If there are blocking ambiguities, ask the user and stop. If assumptions are reasonable defaults, document them and continue, but flag them clearly.
+If a `context.md` was adopted in Adopt, **seed this stage from it**: pull the restatement from its `## Task` section and lift any assumptions / constraints it lists, tagging them `(from intake)`. Treat `## Open questions for the planner` in `context.md` as ambiguities to resolve here.
 
-### Phase 2 — Explore (read-only)
+**Resolve every ambiguity and every assumption with the user — do not silently default.** Batch all of them into a **single** `AskUserQuestion` call (one question per ambiguity/assumption, up to the tool's per-call limit; if there are more, batch the remainder into a follow-up call). For each question:
+
+- Provide exactly **one** option: the reasonable default you'd otherwise have silently assumed, labeled with `(Recommended)`.
+- Do not invent alternative answers to pad the list. The user can pick "Other" (auto-provided by the tool) to give any different answer they want.
+
+After the user answers, record their resolved choices in the restated Restate (no more "Assumptions" vs "Ambiguities" split — every item is now a **resolved decision**, with attribution: `(user-confirmed)` or `(from intake)`). Then continue to Explore.
+
+If there are no ambiguities and no assumptions worth flagging, skip the `AskUserQuestion` call.
+
+### Stage: Explore
 
 Read every file the change is likely to touch. Read the surrounding code. Read tests for affected modules. Read `CLAUDE.md` and the docs it references.
 
@@ -63,32 +79,44 @@ Document:
 
 Be thorough. The executor will not have access to anything you don't externalize into the plan file.
 
-#### End of Phase 2: re-check Phase 1
+#### End of Explore: re-check Restate
 
-After exploration, **explicitly check** whether what you learned changes the problem statement, assumptions, or ambiguities from Phase 1. If yes, update Phase 1 before proceeding, and announce the change visibly:
+After exploration, **explicitly check** whether what you learned changes the problem statement, assumptions, or ambiguities from Restate. If yes, update Restate before proceeding, and announce the change visibly:
 
 ```
-⚠️ Phase 1 updated based on exploration:
+⚠️ Restate updated based on exploration:
    - <field changed>: "<old>" → "<new>"
      reason: <what you found that changed it>
    - <new ambiguity discovered>: <description>
      reason: <what surfaced it>
 ```
 
-Do NOT silently rewrite Phase 1 — the user needs to see drift in real time, before approving the plan in Phase 8.
+Do NOT silently rewrite Restate — the user needs to see drift in real time, before approving the plan in Confirm.
 
-If Phase 1 had blocking ambiguities that exploration resolved, mark them resolved with the resolution. If exploration introduced new blocking ambiguities, stop and ask the user before continuing.
+If Restate had blocking ambiguities that exploration resolved, mark them resolved with the resolution. If exploration introduced new blocking ambiguities, stop and ask the user before continuing.
 
-### Phase 3 — Design
+### Stage: Design
 
 Consider the design space before committing.
 
 - If 2+ approaches are genuinely viable, present each with a 1–3 sentence description and tradeoffs (complexity, performance, blast radius, maintainability, reversibility). Pick one and explain **why this one and why not the others** — the "why not" matters as much as the "why."
 - If only one approach is genuinely viable, name the alternatives you considered and why each is a non-starter (wrong tool for the constraints, blocked by an existing decision, prohibitive cost, etc.). One sentence per rejected alternative is enough.
 
-The point is to prove you considered alternatives — not to manufacture strawmen. If you find yourself inventing a weak alternative just to have two, that's a signal there is only one viable path; document that honestly instead. For Small-sized tasks (Phase 0), this can be very brief.
+The point is to prove you considered alternatives — not to manufacture strawmen. If you find yourself inventing a weak alternative just to have two, that's a signal there is only one viable path; document that honestly instead.
 
-### Phase 4 — Specify
+#### User checkpoint (only when ≥2 alternatives were genuinely viable)
+
+If you presented 2+ viable alternatives above, **do not lock in your recommendation alone** — call `AskUserQuestion` with:
+
+- **Question:** "Which approach should I plan?"
+- **Options** (one per presented alternative): label = the alternative's name, description = the 1–3 sentence summary you gave for it. Mark the one you recommended with `(Recommended)`.
+- Optionally include "Other — describe a different approach" as an additional option.
+
+If the user picks a non-recommended option, restate the chosen approach and the reasoning **before** proceeding to Specify so the rest of the plan reflects that choice.
+
+If only one approach was viable, skip the checkpoint.
+
+### Stage: Specify
 
 - **Every file that changes**, with a one-line statement of intent per file
 - **Every interface that changes**: function signatures, types, schemas, API contracts
@@ -96,18 +124,18 @@ The point is to prove you considered alternatives — not to manufacture strawme
 
 Follow the code-in-plans rule when describing changes. The rule and examples live in [PLAN-FORMAT.md](./PLAN-FORMAT.md).
 
-### Phase 5 — Risk
+### Stage: Risk
 
 - **Edge cases**: empty inputs, large inputs, unicode, concurrency, partial failure, network failure, timeouts, retries
 - **Failure modes** specific to this change
 - **Reversibility**: if this goes wrong in production, how do we undo it?
 
-### Phase 6 — Verify
+### Stage: Verify
 
 - **Test strategy**: what tests to add, what tests to update, what's already covered
 - **Acceptance criteria**: a numbered checklist the executor can tick off. Each item must be objectively verifiable.
 
-### Phase 6.5 — Decomposition check
+### Stage: Decompose
 
 Evaluate whether this plan should be split into multiple chunks. The trigger is **internal coherence**, not size: does the plan contain 2+ units of work that are each internally coherent and would each merit their own focused execution session?
 
@@ -124,7 +152,7 @@ Soft signals that *suggest* (don't gate) decomposition:
 - Implementation Steps > ~10
 - Acceptance Criteria fall into clearly distinct groups
 
-If the plan should NOT split, proceed to Phase 7 with a single chunk.
+If the plan should NOT split, proceed to Persist with a single chunk.
 
 If it SHOULD split, present a **lightweight decomposition** and ask the user.
 
@@ -156,9 +184,9 @@ Print a heavyweight justification:
 
 #### If user picks "I'll describe a different decomposition"
 
-Ask in plain text: "How would you like to decompose this?" Wait for response, accept the user's chunking, then proceed to Phase 7 with that decomposition.
+Ask in plain text: "How would you like to decompose this?" Wait for response, accept the user's chunking, then proceed to Persist with that decomposition.
 
-### Phase 7 — Persist
+### Stage: Persist
 
 Every plan — whether single-chunk or multi-chunk — is written to a suite directory.
 
@@ -183,7 +211,7 @@ Write the index plus one chunk file per chunk:
 
 Each chunk file MUST be self-contained. The executor for chunk B should not need to read chunk A's file — only the parts of chunk A's *output in the codebase* that B depends on. State those dependencies clearly in chunk B's Context section.
 
-### Phase 8 — Confirm
+### Stage: Confirm
 
 Print a concise summary. Use the same shape for single- and multi-chunk suites; only the chunk count differs.
 
@@ -232,7 +260,7 @@ End your turn.
 
 Ask in plain text: "What would you like to change?"
 
-After the user responds, update the plan files in place to incorporate the changes. If the revision requires additional exploration, perform it read-only first, then update. If the revision changes the decomposition (e.g. "actually merge chunks 2 and 3", or "split this into two chunks"), restructure the suite directory accordingly — including renaming/recreating `plan.md` ↔ named chunk files as needed, and updating `index.md`. Then return to the start of Phase 8 (re-print summary, re-call `AskUserQuestion`). Loop until Approve or Discard.
+After the user responds, update the plan files in place to incorporate the changes. If the revision requires additional exploration, perform it read-only first, then update. If the revision changes the decomposition (e.g. "actually merge chunks 2 and 3", or "split this into two chunks"), restructure the suite directory accordingly — including renaming/recreating `plan.md` ↔ named chunk files as needed, and updating `index.md`. Then return to the start of Confirm (re-print summary, re-call `AskUserQuestion`). Loop until Approve or Discard.
 
 #### If the user picks Discard
 
@@ -248,11 +276,11 @@ End your turn.
 
 ## Constraints (re-emphasis)
 
-- Do not write or edit any files except the suite directory contents in Phase 7 and `.gitignore` in Phase 7.
+- Do not write or edit any files except the suite directory contents in Persist and `.gitignore` in Persist.
 - Do not run any command that modifies repository state during exploration.
-- Do not skip or collapse phases into a single response.
-- Do not print the execute command before Phase 8 approval.
-- Do not silently fill in missing requirements — ask the user in Phase 1, or document them as explicit assumptions.
+- Do not skip or collapse stages into a single response.
+- Do not print the execute command before Confirm approval.
+- Do not silently fill in missing requirements — ask the user in Restate, or document them as explicit assumptions.
 - Do not write implementation bodies in plans — interfaces and intent only. The executor designs implementation.
-- Do not silently update Phase 1 mid-flight — announce the change visibly per the Phase 2 end-check.
+- Do not silently update Restate mid-flight — announce the change visibly per the Explore end-check.
 - Always emit a suite directory with `index.md`, even for single-chunk plans. Never write a bare `.md` file directly under `.claude/plans/`.
