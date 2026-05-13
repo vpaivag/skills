@@ -1,6 +1,6 @@
 # Index format
 
-Every suite directory (`.claude/plans/<timestamp>-<feature-slug>/`) contains an `index.md` describing the suite and its chunks. This is true even when there is only one chunk — the index is the canonical entry point.
+Every suite directory (`<plansDir>/<timestamp>-<feature-slug>/`, where `<plansDir>` is read from `.claude/plans-config.json` → `plansDir` and defaults to `.claude/plans`) contains an `index.md` describing the suite and its chunks. This is true even when there is only one chunk — the index is the canonical entry point.
 
 ## Single-chunk suite
 

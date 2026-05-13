@@ -17,24 +17,28 @@ This skill is **strictly read-only**. Do not use `Edit`, `Write`, `MultiEdit`, o
 
 This skill requires the `AskUserQuestion` tool. If it is not available, stop immediately and tell the user this skill requires a recent version of Claude Code (run `claude update`).
 
+## Plans directory
+
+Resolve the plans directory before scanning: read `.claude/plans-config.json` if present and use its `plansDir`; otherwise default to `.claude/plans`. If the config file is missing or malformed, silently fall back to the default. Everywhere this skill says "the plans directory" or `<plansDir>` below, it means the resolved value.
+
 ## Phases
 
 ### Phase 1 — Discover suites
 
-Look for plan suites in `.claude/plans/`. A suite is a subdirectory containing an `index.md` file.
+Look for plan suites in the plans directory (`<plansDir>`). A suite is a subdirectory containing an `index.md` file.
 
-Run roughly: `find .claude/plans -name index.md -type f`
+Run roughly: `find <plansDir> -name index.md -type f`
 
 For each suite found, parse its index to determine:
 - Suite name (from the `# Suite: <name>` heading)
 - Goal (from the `## Goal` section)
 - Chunk list with name, status, dependencies (from the `## Chunks` section)
 
-If a bare `.md` file exists directly under `.claude/plans/` (not inside a suite directory), it's a legacy single-plan from before the suite-everywhere refactor. Note it under "Legacy plans (untracked)" but do not parse it. Suggest the user re-run `/deep-plan` if they want to track it.
+If a bare `.md` file exists directly under the plans directory (not inside a suite directory), it's a legacy single-plan from before the suite-everywhere refactor. Note it under "Legacy plans (untracked)" but do not parse it. Suggest the user re-run `/deep-plan` if they want to track it.
 
 If no suites exist, print:
 ```
-No plan suites found in .claude/plans/.
+No plan suites found in <plansDir>/.
 
 Use /deep-plan to create a new plan.
 ```

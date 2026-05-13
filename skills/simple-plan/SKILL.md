@@ -1,6 +1,6 @@
 ---
 name: simple-plan
-description: Lightweight planner for straightforward, mechanical tasks where no architectural decision is involved — single-file bugfixes, renames, flag additions, small refactors confined to one or two files. Runs a compressed flow (restate → brief explore → specify → risk & verify → persist) and writes a single `simple-plan.md` file into a new or adopted suite directory under `.claude/plans/`. Implements the suite-dir adoption protocol from `skills/intake/CONTEXT-FORMAT.md` — when invoked on a suite dir created by `/intake`, reads its `context.md` and writes output into the same dir. Does NOT integrate with `/execute-plan` or `/plan-tracker`; the user implements the plan directly. Use when the user invokes /simple-plan, when `/intake` recommended `/simple-plan` (no ADR-gate criterion fired), or when the user asks for a quick/lightweight plan for a small task.
+description: Lightweight planner for straightforward, mechanical tasks where no architectural decision is involved — single-file bugfixes, renames, flag additions, small refactors confined to one or two files. Runs a compressed flow (restate → brief explore → specify → risk & verify → persist) and writes a single `simple-plan.md` file into a new or adopted suite directory under the configured plans directory (default `.claude/plans/`). Implements the suite-dir adoption protocol from `skills/intake/CONTEXT-FORMAT.md` — when invoked on a suite dir created by `/intake`, reads its `context.md` and writes output into the same dir. Does NOT integrate with `/execute-plan` or `/plan-tracker`; the user implements the plan directly. Use when the user invokes /simple-plan, when `/intake` recommended `/simple-plan` (no ADR-gate criterion fired), or when the user asks for a quick/lightweight plan for a small task.
 ---
 
 # /simple-plan
@@ -13,10 +13,14 @@ If the task turns out to involve real tradeoffs, touch many files, or branch int
 
 This skill requires the `AskUserQuestion` tool. If it is not available, stop immediately and tell the user this skill requires a recent version of Claude Code (run `claude update`).
 
+## Plans directory
+
+Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` if present and use its `plansDir`; otherwise default to `.claude/plans`. The config also carries a `gitignore` boolean (default `true`) — only manage `.gitignore` when that flag is true. If the config file is missing or malformed, silently fall back to the defaults. Everywhere this skill says "the plans directory" or `<plansDir>` below, it means the resolved value.
+
 ## Operating mode
 
 - **Read-only on code during planning.** Use `Read`, `Glob`, `Grep` only on the 1–3 files the change is likely to touch. No broad codebase mapping — that's what `/deep-plan` is for.
-- **One write.** You may write exactly one file (`simple-plan.md`) inside one new or adopted directory under `.claude/plans/`, and may append `.claude/plans/` to `.gitignore` if not already present. No other writes during planning.
+- **One write.** You may write exactly one file (`simple-plan.md`) inside one new or adopted directory under the plans directory, and may append the plans directory to `.gitignore` if not already present (only when the config's `gitignore` flag is true). No other writes during planning.
 - **Do not invoke `/execute-plan`, `/deep-plan`, `/intake`, or any other skill.** This skill owns its own flow end-to-end. If the bailout rule fires, you *recommend* `/deep-plan` — you do not call it.
 
 ## Phases
@@ -28,8 +32,8 @@ Execute these phases in order. Do not skip ahead.
 Implement the **suite-dir adoption protocol** exactly as defined in [`skills/intake/CONTEXT-FORMAT.md`](../intake/CONTEXT-FORMAT.md) ("Suite-dir adoption protocol" section). Summary of behavior:
 
 1. **Detect.** Adopt if either:
-   - Invoked with an argument that is an existing directory under `.claude/plans/` containing a `context.md`, **or**
-   - Invoked with no argument and exactly one directory under `.claude/plans/` contains a `context.md`, no `index.md`, and no `simple-plan.md`.
+   - Invoked with an argument that is an existing directory under the plans directory containing a `context.md`, **or**
+   - Invoked with no argument and exactly one directory under the plans directory contains a `context.md`, no `index.md`, and no `simple-plan.md`.
 2. **On adopt:**
    - Read `context.md` before any other action.
    - Print `📥 Adopted intake context from <path>/context.md` at the top of your first response.
@@ -41,7 +45,7 @@ Implement the **suite-dir adoption protocol** exactly as defined in [`skills/int
 3. **On no adoption:** mint a new dir.
    - Compute timestamp via `date +%Y-%m-%d-%H%M%S`.
    - Derive a kebab-case slug (≤6 words) from the task essence.
-   - Suite dir: `.claude/plans/<timestamp>-<slug>/`. Don't create it yet — defer the `mkdir` to Phase 5 so the user can cancel during Phase 6 without leaving an empty dir behind. (For adoption, the dir already exists.)
+   - Suite dir: `<plansDir>/<timestamp>-<slug>/`, where `<plansDir>` is the plans directory resolved above. Don't create it yet — defer the `mkdir` to Phase 5 so the user can cancel during Phase 6 without leaving an empty dir behind. (For adoption, the dir already exists.)
 4. **Refuse to overwrite.** If the target dir already contains `index.md`, print:
    ```
    This dir already has a deep plan at <path>/index.md. Use /execute-plan instead.
@@ -85,8 +89,8 @@ One short section combining:
 
 ### Phase 5 — Persist
 
-1. If minted (not adopted), create the suite dir: `mkdir -p .claude/plans/<timestamp>-<slug>/`.
-2. If a `.gitignore` exists at the project root and does not already contain `.claude/plans/`, append `.claude/plans/` to it. If `.gitignore` does not exist, create it with that single line. Check first to avoid duplicates.
+1. If minted (not adopted), create the suite dir: `mkdir -p <plansDir>/<timestamp>-<slug>/`.
+2. If the config's `gitignore` flag is true (default), and a `.gitignore` exists at the project root that does not already contain `<plansDir>/`, append `<plansDir>/` to it. If `.gitignore` does not exist, create it with that single line. Check first to avoid duplicates. If `gitignore` is false, skip this step entirely.
 3. Write `simple-plan.md` into the suite dir using the [Output file shape](#output-file-shape) below.
 
 ### Phase 6 — Confirm

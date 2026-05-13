@@ -19,6 +19,10 @@ If you find yourself wanting to edit during exploration, stop and add the desire
 
 This skill requires the `AskUserQuestion` tool. If it is not available, stop immediately and tell the user this skill requires a recent version of Claude Code (run `claude update`).
 
+## Plans directory
+
+Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` if present and use its `plansDir`; otherwise default to `.claude/plans`. The config also carries a `gitignore` boolean (default `true`) — only manage `.gitignore` when that flag is true. If the config file is missing or malformed, silently fall back to the defaults. Everywhere this skill says "the plans directory" or `<plansDir>` below, it means the resolved value.
+
 ## Project conventions
 
 Before Explore, read `CLAUDE.md` at the project root if it exists. It contains references to other documentation — follow those references and read the linked docs. Treat `CLAUDE.md` and its referenced docs as authoritative project context that must be honored in the plan.
@@ -33,8 +37,8 @@ Before restating, decide whether this invocation **adopts** an existing intake-p
 
 Detection (per the protocol):
 
-1. If invoked with an argument that is an existing directory under `.claude/plans/` containing a `context.md`, **adopt** it.
-2. If invoked with no argument and exactly one directory under `.claude/plans/` contains a `context.md`, no `index.md`, and no `simple-plan.md`, **adopt** that directory.
+1. If invoked with an argument that is an existing directory under the plans directory containing a `context.md`, **adopt** it.
+2. If invoked with no argument and exactly one directory under the plans directory contains a `context.md`, no `index.md`, and no `simple-plan.md`, **adopt** that directory.
 3. Otherwise, **mint** — defer creation to Persist as usual.
 
 Refusal rule: if the candidate suite dir already contains an `index.md`, **refuse and ask the user** before doing anything else (e.g. "An existing plan is present — overwrite, write a new suite, or cancel?"). Overwriting is destructive and must not happen silently.
@@ -192,8 +196,8 @@ Every plan — whether single-chunk or multi-chunk — is written to a suite dir
 
 1. Get a timestamp: `date +%Y-%m-%d-%H%M%S`.
 2. Derive a kebab-case slug (≤6 words) from the task essence.
-3. Create the suite directory: `mkdir -p .claude/plans/<timestamp>-<feature-slug>`.
-4. If a `.gitignore` exists at the project root and does not already contain `.claude/plans/`, append the line `.claude/plans/` to it. If `.gitignore` does not exist, create it with that single line.
+3. Create the suite directory: `mkdir -p <plansDir>/<timestamp>-<feature-slug>`, where `<plansDir>` is the plans directory resolved above.
+4. If the config's `gitignore` flag is true (default), and a `.gitignore` exists at the project root that does not already contain `<plansDir>/`, append the line `<plansDir>/` to it. If `.gitignore` does not exist, create it with that single line. If `gitignore` is false, skip this step entirely.
 
 #### Single-chunk suite
 
@@ -283,4 +287,4 @@ End your turn.
 - Do not silently fill in missing requirements — ask the user in Restate, or document them as explicit assumptions.
 - Do not write implementation bodies in plans — interfaces and intent only. The executor designs implementation.
 - Do not silently update Restate mid-flight — announce the change visibly per the Explore end-check.
-- Always emit a suite directory with `index.md`, even for single-chunk plans. Never write a bare `.md` file directly under `.claude/plans/`.
+- Always emit a suite directory with `index.md`, even for single-chunk plans. Never write a bare `.md` file directly under the plans directory.

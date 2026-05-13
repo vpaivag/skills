@@ -17,9 +17,9 @@ Audit a plan suite produced by `/deep-plan` against the work that's actually lan
 
 `/review-plan` (with optional path to a suite directory or `index.md`).
 
-A *suite* is any directory under `.claude/plans/` containing an `index.md`. Single-chunk suites are reviewed identically to multi-chunk ones.
+A *suite* is any directory under the plans directory (resolved from `.claude/plans-config.json` → `plansDir`, default `.claude/plans`) containing an `index.md`. Single-chunk suites are reviewed identically to multi-chunk ones.
 
-If no path is given, discover suites under `.claude/plans/` and use the only one. If multiple, call `AskUserQuestion` with up to 4 most-recently-modified suites. If `AskUserQuestion` is unavailable, stop and ask the user to run `claude update`.
+If no path is given, discover suites under the plans directory and use the only one. If multiple, call `AskUserQuestion` with up to 4 most-recently-modified suites. If `AskUserQuestion` is unavailable, stop and ask the user to run `claude update`.
 
 ## Phases
 
@@ -41,7 +41,7 @@ Try in order, and state which one you used in the report:
 
 Collect the file list with `git diff --name-status <baseline>..HEAD`. Read targeted hunks (`git diff <baseline>..HEAD -- <path>`) when verifying a specific criterion — don't dump the whole diff into context.
 
-Exclude the suite directory itself (`.claude/plans/<suite>/**`) from the drift bucket — suite metadata isn't deliverable code.
+Exclude the suite directory itself (`<plansDir>/<suite>/**`, where `<plansDir>` is the resolved plans directory) from the drift bucket — suite metadata isn't deliverable code.
 
 ### Phase 3 — Cross-check
 

@@ -11,11 +11,15 @@ Implement the chunk at the path provided by the user. Every plan produced by `/d
 
 `/execute-plan <path-to-chunk-file>`
 
-Examples:
+Examples (paths shown use the default plans directory; substitute the configured `plansDir` if different):
 - Single-chunk suite: `/execute-plan .claude/plans/2026-04-30-153022-add-rate-limiter/plan.md`
 - One chunk in a multi-chunk suite: `/execute-plan .claude/plans/2026-04-30-153022-mqtt-sync/listener.md`
 
 If the user passes the suite directory or `index.md`, ask which chunk they want to run.
+
+## Plans directory
+
+Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` if present and use its `plansDir`; otherwise default to `.claude/plans`. If the config file is missing or malformed, silently fall back to the default. The user-supplied chunk path is authoritative — this resolution only matters when this skill needs to interpret or print paths that aren't given by the user.
 
 ## Required tool
 
