@@ -33,9 +33,9 @@ Execute these stages in order. Do not skip ahead. Do not collapse multiple stage
 
 ### Stage: Adopt
 
-Before restating, decide whether this invocation **adopts** an existing intake-produced suite directory or **mints** a fresh one later in Persist. The full adoption contract — detection rules, refusal behavior, and malformed-input handling — lives in [`../intake/CONTEXT-FORMAT.md`](../intake/CONTEXT-FORMAT.md) under "Suite-dir adoption protocol". Implement that protocol; the summary below is non-authoritative.
+Before restating, decide whether this invocation **adopts** an existing suite directory that already contains a `context.md` (typically written by `/intake`) or **mints** a fresh one later in Persist.
 
-Detection (per the protocol):
+Detection:
 
 1. If invoked with an argument that is an existing directory under the plans directory containing a `context.md`, **adopt** it.
 2. If invoked with no argument and exactly one directory under the plans directory contains a `context.md`, no `index.md`, and no `simple-plan.md`, **adopt** that directory.

@@ -1,6 +1,6 @@
 ---
 name: simple-plan
-description: Lightweight planner for straightforward, mechanical tasks where no architectural decision is involved — single-file bugfixes, renames, flag additions, small refactors confined to one or two files. Runs a compressed flow (restate → brief explore → specify → risk & verify → persist) and writes a single `simple-plan.md` file into a new or adopted suite directory under the configured plans directory (default `.claude/plans/`). Implements the suite-dir adoption protocol from `skills/intake/CONTEXT-FORMAT.md` — when invoked on a suite dir created by `/intake`, reads its `context.md` and writes output into the same dir. Does NOT integrate with `/execute-plan` or `/plan-tracker`; the user implements the plan directly. Use when the user invokes /simple-plan, when `/intake` recommended `/simple-plan` (no ADR-gate criterion fired), or when the user asks for a quick/lightweight plan for a small task.
+description: Lightweight planner for straightforward, mechanical tasks where no architectural decision is involved — single-file bugfixes, renames, flag additions, small refactors confined to one or two files. Runs a compressed flow (restate → brief explore → specify → risk & verify → persist) and writes a single `simple-plan.md` file into a new or adopted suite directory under the configured plans directory (default `.claude/plans/`). When invoked on a suite dir that already contains a `context.md` (typically from `/intake`), reads it and writes output into the same dir; otherwise mints a fresh suite dir. Does NOT integrate with `/execute-plan` or `/plan-tracker`; the user implements the plan directly. Use when the user invokes /simple-plan, when `/intake` recommended `/simple-plan` (no ADR-gate criterion fired), or when the user asks for a quick/lightweight plan for a small task.
 ---
 
 # /simple-plan
@@ -29,7 +29,7 @@ Execute these phases in order. Do not skip ahead.
 
 ### Phase 0 — Adopt or mint
 
-Implement the **suite-dir adoption protocol** exactly as defined in [`skills/intake/CONTEXT-FORMAT.md`](../intake/CONTEXT-FORMAT.md) ("Suite-dir adoption protocol" section). Summary of behavior:
+Decide whether to **adopt** an existing suite directory that already contains a `context.md` (typically written by `/intake`) or **mint** a fresh one in Phase 5.
 
 1. **Detect.** Adopt if either:
    - Invoked with an argument that is an existing directory under the plans directory containing a `context.md`, **or**
