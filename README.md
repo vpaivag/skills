@@ -1,8 +1,8 @@
 # vpaivag/skills
 
-Personal collection of agent skills for planning, executing, tracking, and reviewing software engineering work — plus a utility for keeping `CLAUDE.md` files lean.
+Personal collection of agent skills covering planning, repo setup, and onboarding workflows.
 
-Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. They're designed to compose into one loop:
+Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. The planning skills compose into one loop:
 
 ```mermaid
 flowchart TD
@@ -18,16 +18,16 @@ flowchart TD
     deep --> execute
     execute --> review
 
-    tracker -.reads-output.-> deep
+    deep -.reads-output.-> tracker
     tracker -.tracks-changes.-> execute
 
     classDef helper fill:#f5f5f5,stroke:#999,stroke-dasharray:4 3,color:#555
     class tracker helper
 ```
 
-`/intake` is the recommended front door — it gathers context and points you at the right planner. You can still invoke `/deep-plan` or `/simple-plan` directly if you already know which one fits.
+_Diagram shows the planning loop; see the clusters below for setup and onboarding skills._
 
-Plus two standalone skills: `/pr-reviewer` for expert-level pull request reviews, and `/claude-md-refactor` to keep your repo's `CLAUDE.md` from quietly eating every session's context.
+`/intake` is the recommended front door — it gathers context and points you at the right planner. You can still invoke `/deep-plan` or `/simple-plan` directly if you already know which one fits.
 
 ## Contents
 
@@ -35,14 +35,20 @@ Plus two standalone skills: `/pr-reviewer` for expert-level pull request reviews
   - [Via the skills CLI](#via-the-skills-cli)
   - [As a Claude Code plugin](#as-a-claude-code-plugin)
 - [Skills](#skills)
-  - [intake](#intake)
-  - [simple-plan](#simple-plan)
-  - [deep-plan](#deep-plan)
-  - [execute-plan](#execute-plan)
-  - [plan-tracker](#plan-tracker)
-  - [review-plan](#review-plan)
-  - [pr-reviewer](#pr-reviewer)
-  - [claude-md-refactor](#claude-md-refactor)
+  - [Planning](#planning)
+    - [intake](#intake)
+    - [simple-plan](#simple-plan)
+    - [deep-plan](#deep-plan)
+    - [execute-plan](#execute-plan)
+    - [plan-tracker](#plan-tracker)
+    - [review-plan](#review-plan)
+  - [Repo setup](#repo-setup)
+    - [setup](#setup)
+    - [claude-md-refactor](#claude-md-refactor)
+  - [Onboarding](#onboarding)
+    - [onboarding](#onboarding-1)
+  - [Standalone](#standalone)
+    - [pr-reviewer](#pr-reviewer)
 - [Layout](#layout)
 - [Contributing](#contributing)
 
@@ -112,7 +118,9 @@ Or use a local clone instead of GitHub:
 
 ## Skills
 
-### intake
+### Planning
+
+#### intake
 
 **Trigger:** `/intake` or asking to "start a new task", "scope this out", or wanting help deciding whether a task needs a deep plan.
 
@@ -125,7 +133,7 @@ Highlights:
 
 → [`skills/intake`](./skills/intake)
 
-### simple-plan
+#### simple-plan
 
 **Trigger:** `/simple-plan` or asking for a lightweight plan for a straightforward task.
 
@@ -135,7 +143,7 @@ Use this when the work is mechanical (rename a field across a codebase), a small
 
 → [`skills/simple-plan`](./skills/simple-plan)
 
-### deep-plan
+#### deep-plan
 
 **Trigger:** `/deep-plan` or asking for a deep/thorough plan before implementation.
 
@@ -150,7 +158,7 @@ Highlights:
 
 → [`skills/deep-plan`](./skills/deep-plan)
 
-### execute-plan
+#### execute-plan
 
 **Trigger:** `/execute-plan <path-to-chunk-file>`.
 
@@ -160,7 +168,7 @@ Works on both single-chunk suites (`plan.md`) and individual chunks of a multi-c
 
 → [`skills/execute-plan`](./skills/execute-plan)
 
-### plan-tracker
+#### plan-tracker
 
 **Trigger:** `/plan-tracker` or questions like "what's the state of the plan?", "what's next?", "what's left?".
 
@@ -168,7 +176,7 @@ Read-only status view for plan suites in the current project. Detects the active
 
 → [`skills/plan-tracker`](./skills/plan-tracker)
 
-### review-plan
+#### review-plan
 
 **Trigger:** `/review-plan` or asking "is the plan actually done?", "did we deliver what the plan promised?", "is the suite status honest?".
 
@@ -178,19 +186,17 @@ Pairs with `plan-tracker`: tracker shows recorded status, review-plan checks whe
 
 → [`skills/review-plan`](./skills/review-plan)
 
-### pr-reviewer
+### Repo setup
 
-**Trigger:** asking to review a PR, look at a pull request, do a code review, check a branch before merge, or "what do you think of #123 / this branch?".
+#### setup
 
-Performs a thorough, expert-level pull request review and returns a structured report with issues categorized by severity, including code snippets. Reads surrounding code (not just the diff) before flagging anything, and refuses to fabricate issues.
+**Trigger:** `/setup` or asking to configure where plans live, set up the plans directory, or whether plans should be gitignored.
 
-Hard rules baked in:
-- **Never posts to the PR** unless the user explicitly says so after seeing the report.
-- **Never modifies the PR's code** — the reviewer reviews, the author authors.
+Writes a small `.claude/plans-config.json` that the planning skills (`/intake`, `/deep-plan`, `/simple-plan`, `/plan-tracker`, `/execute-plan`, `/review-plan`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
 
-→ [`skills/pr-reviewer`](./skills/pr-reviewer)
+→ [`skills/setup`](./skills/setup)
 
-### claude-md-refactor
+#### claude-md-refactor
 
 **Trigger:** mentions of `CLAUDE.md` being too long, bloated, eating context, or asks to set up / audit / split / restructure a `CLAUDE.md` (or `AGENTS.md`-style instructions).
 
@@ -202,6 +208,30 @@ Three modes:
 - **Confirm** a healthy `CLAUDE.md` doesn't need changes (avoids over-editing).
 
 → [`skills/claude-md-refactor`](./skills/claude-md-refactor)
+
+### Onboarding
+
+#### onboarding
+
+**Trigger:** `/onboarding` or asking for a guided tour of a new codebase / help onboarding.
+
+Ramps a newcomer up on an unfamiliar codebase in three phases: a `CLAUDE.md`-quality gate, a conversational tour driven by `CLAUDE.md` and the docs it points at, and a single contrived hands-on task written to `.claude/onboarding-task.md` so the newcomer can implement it themselves on a sandbox branch. Read-only on the codebase during the tour; writes exactly one artifact. Needs a healthy `CLAUDE.md` to be worthwhile — aborts with a pointer to `/claude-md-refactor` (bootstrap mode) if it's missing, and warns + offers an override if it looks thin.
+
+→ [`skills/onboarding`](./skills/onboarding)
+
+### Standalone
+
+#### pr-reviewer
+
+**Trigger:** asking to review a PR, look at a pull request, do a code review, check a branch before merge, or "what do you think of #123 / this branch?".
+
+Performs a thorough, expert-level pull request review and returns a structured report with issues categorized by severity, including code snippets. Reads surrounding code (not just the diff) before flagging anything, and refuses to fabricate issues.
+
+Hard rules baked in:
+- **Never posts to the PR** unless the user explicitly says so after seeing the report.
+- **Never modifies the PR's code** — the reviewer reviews, the author authors.
+
+→ [`skills/pr-reviewer`](./skills/pr-reviewer)
 
 ## Other useful skills
 
@@ -221,9 +251,11 @@ skills/
   deep-plan/SKILL.md
   execute-plan/SKILL.md
   intake/SKILL.md
+  onboarding/SKILL.md
   plan-tracker/SKILL.md
   pr-reviewer/SKILL.md
   review-plan/SKILL.md
+  setup/SKILL.md
   simple-plan/SKILL.md
 ```
 

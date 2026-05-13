@@ -1,7 +1,7 @@
 {
   "name": "skills",
   "description": "Skills for planning, executing, tracking, and reviewing software work — plus a CLAUDE.md refactor utility.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "vpaivag",
     "email": "vpaivagross@gmail.com"
@@ -20,9 +20,11 @@
     "./skills/deep-plan",
     "./skills/execute-plan",
     "./skills/intake",
+    "./skills/onboarding",
     "./skills/plan-tracker",
     "./skills/pr-reviewer",
     "./skills/review-plan",
+    "./skills/setup",
     "./skills/simple-plan"
   ]
 }
