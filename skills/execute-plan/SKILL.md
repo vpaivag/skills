@@ -21,9 +21,9 @@ If the user passes the suite directory or `index.md`, ask which chunk they want 
 
 Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` if present and use its `plansDir`; otherwise default to `.claude/plans`. If the config file is missing or malformed, silently fall back to the default. The user-supplied chunk path is authoritative — this resolution only matters when this skill needs to interpret or print paths that aren't given by the user.
 
-## Required tool
+## Asking questions
 
-This skill requires the `AskUserQuestion` tool. If it is not available, stop immediately and tell the user this skill requires a recent version of Claude Code (run `claude update`).
+This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode — every call site below that says "call `AskUserQuestion`" follows this fallback rule.
 
 ## Phases
 

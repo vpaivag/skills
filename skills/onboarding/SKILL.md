@@ -11,9 +11,9 @@ Three phases: gate → tour → task. The tour is conversational and writes noth
 
 This skill does NOT write `CLAUDE.md` for the user, and does NOT implement the contrived task. Writing docs is `/claude-md-refactor`'s job; implementing the task is the newcomer's job — that's the point.
 
-## Required tool
+## Asking questions
 
-This skill requires the `AskUserQuestion` tool. If it is not available, stop immediately and tell the user this skill requires a recent version of Claude Code (run `claude update`).
+This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode — every call site below that says "call `AskUserQuestion`" follows this fallback rule.
 
 ## Operating mode
 

@@ -9,9 +9,9 @@ A compressed planner for tasks where the work is mostly mechanical and no archit
 
 If the task turns out to involve real tradeoffs, touch many files, or branch into multiple viable approaches, this skill **stops and recommends `/deep-plan`** rather than producing a half-baked simple plan.
 
-## Required tool
+## Asking questions
 
-This skill requires the `AskUserQuestion` tool. If it is not available, stop immediately and tell the user this skill requires a recent version of Claude Code (run `claude update`).
+This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode — every call site below that says "call `AskUserQuestion`" follows this fallback rule.
 
 ## Plans directory
 

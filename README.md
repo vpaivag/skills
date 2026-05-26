@@ -124,7 +124,7 @@ Or use a local clone instead of GitHub:
 
 **Trigger:** `/intake` or asking to "start a new task", "scope this out", or wanting help deciding whether a task needs a deep plan.
 
-Short, focused Q&A front door for any new task. Asks up to a handful of clarifying questions, writes a `context.md` capturing the task and the resolved assumptions, then **recommends** either `/simple-plan` or `/deep-plan` based on an ADR-gate (hard-to-reverse, surprising-without-context, or real-tradeoff). The downstream planner adopts the same suite directory, so no context is lost between intake and planning.
+Short, focused Q&A front door for any new task. Asks up to a handful of clarifying questions, writes a `context.md` capturing the task and the resolved assumptions, then **recommends** either `/simple-plan` or `/deep-plan` based on an ADR-gate (hard-to-reverse, surprising-without-context, real-tradeoff, or cross-concern — task spans multiple distinct kinds of change). File count is deliberately not a criterion: a 30-file uniform rename stays in `/simple-plan`. The downstream planner adopts the same suite directory, so no context is lost between intake and planning.
 
 Highlights:
 - **Capped questions.** Won't grill you — gathers just enough to disambiguate.
