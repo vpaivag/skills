@@ -19,7 +19,7 @@ Audit a plan suite produced by `/deep-plan` against the work that's actually lan
 
 A *suite* is any directory under the plans directory (resolved from `.claude/plans-config.json` → `plansDir`, default `.claude/plans`) containing an `index.md`. Single-chunk suites are reviewed identically to multi-chunk ones.
 
-If no path is given, discover suites under the plans directory and use the only one. If multiple, call `AskUserQuestion` with up to 4 most-recently-modified suites. If `AskUserQuestion` is unavailable, stop and ask the user to run `claude update`.
+If no path is given, discover suites under the plans directory and use the only one. If multiple, call `AskUserQuestion` with up to 4 most-recently-modified suites. If `AskUserQuestion` is unavailable, fall back to plain text: print the candidate suites as a numbered list (most-recently-modified first) and wait for the user to reply with a number or path.
 
 ## Phases
 

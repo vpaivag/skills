@@ -7,9 +7,9 @@ description: Configure where plan suites live and whether the plans directory is
 
 Write a small JSON config that the planning skills consult to find the plans directory and decide whether to manage `.gitignore`. This skill writes at most two files: `.claude/plans-config.json` and (optionally) `.gitignore`.
 
-## Required tool
+## Asking questions
 
-This skill requires the `AskUserQuestion` tool. If it is not available, stop immediately and tell the user this skill requires a recent version of Claude Code (run `claude update`).
+This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode — every call site below that says "call `AskUserQuestion`" follows this fallback rule.
 
 ## Operating mode
 
