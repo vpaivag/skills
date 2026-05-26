@@ -23,7 +23,7 @@ The shape of `context.md` — the single artifact `/intake` writes into a suite 
 - <constraint, only if elicited>
 
 ## Open questions for the planner
-- <question raised during intake but not resolved (e.g. because the 5-question cap was hit)>
+- <question raised during intake but not resolved (e.g. because the question cap was hit)>
 ```
 
 ## Rules
@@ -31,4 +31,4 @@ The shape of `context.md` — the single artifact `/intake` writes into a suite 
 - **Required:** H1 title, the `Recommended planner:` + `Reason:` block, and `## Task`.
 - **Optional:** everything below `## Task`. Omit any section with no content — no placeholder headers.
 - `Recommended planner:` is exactly one of `/deep-plan` or `/simple-plan`.
-- `Reason:` is a single line. For `/deep-plan`, it names the ADR-gate criterion that fired (`hard-to-reverse`, `surprising-without-context`, or `real-tradeoff`) plus a short justification. For `/simple-plan`, it is `straightforward — no ADR-gate criterion met`.
+- `Reason:` is a single line. For `/deep-plan`, it names the ADR-gate criterion that fired (`hard-to-reverse`, `surprising-without-context`, `real-tradeoff`, or `cross-concern`) plus a short justification. When `cross-concern` fires, name the kinds of work involved (e.g. `cross-concern: migration + model + serializer`). For `/simple-plan`, it is `straightforward — no ADR-gate criterion met`.

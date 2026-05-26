@@ -1,6 +1,6 @@
 ---
 name: intake
-description: Front-door planning skill that gathers context before a coding task is planned. Requires the user to state their intent first; if /intake is invoked with no task, it asks for one and stops. Order is: restate → ask the 3 core questions (intent, scope, anchor) → explore the codebase bounded by those answers to resolve anything code can settle → continue asking only the follow-ups code couldn't answer (≤5 questions total across core + escalate, one at a time via AskUserQuestion, recommended-answer option first). Recommends either /simple-plan or /deep-plan via an ADR-gate (hard-to-reverse / surprising-without-context / real-tradeoff). Writes a single `context.md` artifact into a new suite directory under the configured plans directory (default `.claude/plans/`) and prints a handoff command for the user to run in a new session. Use when the user invokes /intake, asks to "gather context before planning", or wants a checkpoint before /deep-plan or /simple-plan.
+description: Front-door planning skill that gathers context before a coding task is planned. Requires the user to state their intent first; if /intake is invoked with no task, it asks for one and stops. Order is: restate → ask the 3 core questions (intent, scope, anchor) → explore the codebase bounded by those answers to resolve anything code can settle → continue asking only the follow-ups code couldn't answer (hard cap of 10 follow-ups in Phase 3 on top of the 3 core questions, asked one at a time via AskUserQuestion, recommended-answer option first). Recommends either /simple-plan or /deep-plan via an ADR-gate (hard-to-reverse / surprising-without-context / real-tradeoff / cross-concern — task spans multiple distinct kinds of change). File count is deliberately NOT a criterion: uniform bulk work (e.g. a 30-file rename) belongs in /simple-plan. Writes a single `context.md` artifact into a new suite directory under the configured plans directory (default `.claude/plans/`) and prints a handoff command for the user to run in a new session. Use when the user invokes /intake, asks to "gather context before planning", or wants a checkpoint before /deep-plan or /simple-plan.
 ---
 
 # /intake
@@ -54,22 +54,28 @@ After the 3 core answers, walk down the decision tree one branch at a time. The 
 3. **Otherwise, ask one focused question** via `AskUserQuestion`, recommended-answer first. Only ask what code can't tell you: priorities, taste, future direction, constraints not visible in the repo, decisions between viable approaches.
 4. **Use the answer to scope the next read**, then loop. Each user answer should narrow what you explore next; each read should sharpen the next question.
 
-**Soft cap: ~5 questions total across Phases 2 + 3.** Treat 5 as the strong default — stop there and proceed with best-effort context, recording unresolved items in `context.md`'s `Open questions for the planner` section.
+**Hard cap: 10 follow-up questions in Phase 3** (on top of the 3 core questions in Phase 2, so 13 total at the absolute limit). Ask only what closes a real gap — an unresolved dependency, an open tradeoff, a blast-radius signal the ADR-gate will need, or a missing essential (intent, scope, anchor) that the core Q&A didn't fully resolve. Do not pad to fill the budget. At 10 follow-ups, stop asking and write what you have, recording unresolved items in `context.md`'s `Open questions for the planner` section.
 
-**Override clause:** if after 5 questions the context is still too thin for a planner to act on (e.g. the task intent itself is unclear, scope is contradictory, or no anchor for "where to look first" has emerged), you may ask further questions. Constraints:
-- Do **not** mention the cap, the override, or that you're exceeding a limit. Just ask the next question naturally, as if it were part of the normal flow.
-- Each additional question must close a specific essential gap (intent, scope, or anchor) — not a nice-to-have.
-- Never exceed **10 questions total** under any circumstance — at that point, write what you have and let the planner surface the rest.
-
-The override clause is invisible to the user by design — the cap is a budget for you, not a contract with them.
+Do not mention the cap to the user — it's a budget for you, not a contract with them.
 
 ### Phase 4 — Recommend
 
+Before applying the gate, produce a **kinds-of-work estimate** from what Phases 2 + 3 yielded. The point is to classify *what the work consists of*, not to count files. Identify which of the following are present:
+
+- **Schema / migration** — database schema changes, new columns, indexes, data migrations, backfills.
+- **Public API / contract** — externally consumed function signatures, HTTP routes, event payloads, file formats, CLI flags.
+- **Persisted data** — anything written to disk or DB whose format other code or other deployments depend on.
+- **Cross-concern work** — the task spans **multiple distinct kinds of change** (e.g. migration + model + serializer + UI, or backend logic + frontend rendering + tests of different shapes). Uniform bulk work (e.g. one rename applied across 30 files) is **not** cross-concern — it's a single kind of work repeated.
+- **Genuine design choice** — a decision with 2+ viable approaches where the tradeoff is real (not manufactured).
+
+Keep this classification internal to your reasoning — don't ask the user to validate it. It exists so the ADR-gate has the right signals to evaluate. **File count is not a criterion** — a 30-file uniform rename is fine for `/simple-plan`; a 4-file change spanning a migration, a model, a serializer, and a UI component is not.
+
 Apply the **ADR-gate**. Recommend `/deep-plan` if any one of these is true; otherwise recommend `/simple-plan`:
 
-1. **Hard-to-reverse** — touches database schema, public API contracts, file formats, persisted data, or is otherwise costly to roll back.
+1. **Hard-to-reverse** — touches database schema, public API contracts, file formats, persisted data, or is otherwise costly to roll back. Migrations almost always trip this even when they look mechanical.
 2. **Surprising-without-context** — a future reader will plausibly ask "why was this done this way?" — the decision warrants documentation.
 3. **Real-tradeoff** — 2 or more genuinely viable approaches exist with different complexity / performance / maintainability profiles.
+4. **Cross-concern** — the task spans multiple distinct kinds of change that each deserve their own consideration (migration + model + serializer, backend + frontend + tests of different shapes, etc.). Uniform bulk work does **not** count.
 
 Print the recommendation, citing which criterion fired (or "none — straightforward" if recommending `/simple-plan`). Then show both options and ask via `AskUserQuestion`:
 - "Use recommendation"
@@ -107,7 +113,7 @@ Do NOT auto-invoke `/simple-plan` or `/deep-plan`. The handoff is the user's job
 - Do not invoke `grill-me` or any other skill.
 - Do not touch the codebase before Phase 1 has yielded a stated intent or before the 3 core questions in Phase 2 have been answered. Exploration is bounded to the user's stated scope/anchor.
 - Prefer reading code over asking when the answer is deterministic. Only ask the user what code cannot answer.
-- Do not exceed ~5 questions total across Phases 2+3.
+- Do not exceed 10 follow-up questions in Phase 3 (on top of the 3 core questions in Phase 2 — 13 total at the limit).
 - Do not create the suite directory until Phase 5 — if the user cancels or abandons mid-Q&A, no artifact is created.
 - Do not auto-invoke downstream skills. End with the handoff block.
 - Ask questions one at a time via `AskUserQuestion`, never batched.
