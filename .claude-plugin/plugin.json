@@ -16,6 +16,7 @@
     "claude-md"
   ],
   "skills": [
+    "./skills/adversarial-review",
     "./skills/claude-md-refactor",
     "./skills/deep-plan",
     "./skills/execute-plan",

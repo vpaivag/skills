@@ -49,6 +49,7 @@ _Diagram shows the planning loop; see the clusters below for setup and onboardin
     - [onboarding](#onboarding-1)
   - [Standalone](#standalone)
     - [pr-reviewer](#pr-reviewer)
+    - [adversarial-review](#adversarial-review)
 - [Layout](#layout)
 - [Contributing](#contributing)
 
@@ -233,6 +234,19 @@ Hard rules baked in:
 
 → [`skills/pr-reviewer`](./skills/pr-reviewer)
 
+#### adversarial-review
+
+**Trigger:** asking for an adversarial review, to stress-test a diff for bugs, "tear this apart", "assume it's broken", "poke holes in this", "red-team this code", or a skeptical second pass on code that was just written.
+
+Adversarial code review built on **split context**, faithful to the [Bun-in-Rust flow](https://bun.com/blog/bun-in-rust#adversarial-review). The Claude that wrote the code wants it accepted, so it's a poor judge of its own work. This skill delegates the reviewing to fresh subagents that see **only the diff** — never the plan or the author's reasoning — and are told to assume the code is wrong and find why. Every suspected defect is then verified against the real code before it reaches you, so the aggressive framing doesn't flood you with false positives.
+
+- **Reviewers see the diff, not the story** — leaking intent is what launders a bug into "looks fine".
+- **Report by default** — fixes are applied only if you ask after seeing the findings.
+
+Narrower than `pr-reviewer` (no intent-gathering, no GitHub posting); the lightweight local counterpart to `/code-review ultra`.
+
+→ [`skills/adversarial-review`](./skills/adversarial-review)
+
 ## Other useful skills
 
 This bundle isn't the only one worth installing. [`mattpocock/skills`](https://github.com/mattpocock/skills) has a great companion set — examples:
@@ -247,6 +261,7 @@ See the full list at [github.com/mattpocock/skills](https://github.com/mattpococ
 ```
 .claude-plugin/plugin.json
 skills/
+  adversarial-review/SKILL.md
   claude-md-refactor/SKILL.md
   deep-plan/SKILL.md
   execute-plan/SKILL.md
