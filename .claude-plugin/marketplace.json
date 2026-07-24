@@ -9,7 +9,7 @@
     {
       "name": "skills",
       "source": "./",
-      "description": "A planning pipeline for software work — one /plan orchestrator with blind QA and a visual review surface, plus execution, adversarial review, and a CLAUDE.md refactor utility.",
+      "description": "The BBQ flow (Blueprint \u2192 Build \u2192 QA) \u2014 a planning pipeline with blind QA and a visual review surface, plus adversarial review and a CLAUDE.md refactor utility.",
       "author": {
         "name": "vpaivag",
         "email": "vpaivagross@gmail.com"
@@ -18,8 +18,17 @@
       "repository": "https://github.com/vpaivag/skills",
       "license": "MIT",
       "category": "workflow",
-      "keywords": ["skills", "planning", "code-review", "claude-md"],
-      "tags": ["planning", "review", "execution"]
+      "keywords": [
+        "skills",
+        "planning",
+        "code-review",
+        "claude-md"
+      ],
+      "tags": [
+        "planning",
+        "review",
+        "execution"
+      ]
     }
   ]
 }

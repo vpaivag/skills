@@ -1,6 +1,6 @@
 # QA-FORMAT
 
-The shape of `qa-plan.md` — the behavioral verification plan the blind `qa-author` agent writes into the suite directory. It is derived **solely** from `context.md`; the author never sees `plan.md`, the proposals, or the diff. `/execute-qa` consumes this file in a fresh, plan-blind session.
+The shape of `qa-plan.md` — the behavioral verification plan the blind `qa-author` agent writes into the suite directory. It is derived **solely** from `context.md`; the author never sees `plan.md`, the proposals, or the diff. `/qa` consumes this file in a fresh, plan-blind session.
 
 ## Schema
 

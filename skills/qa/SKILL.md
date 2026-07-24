@@ -1,17 +1,17 @@
 ---
-name: execute-qa
-description: Verify a suite's behavioral intent by executing qa-plan.md in a plan-blind session. Reads ONLY qa-plan.md (and context.md) — never plan.md, visual.html, or the diff — then verifies each B-n/R-n criterion against the running code. Writes real test files when the repo has a test setup; otherwise performs manual verification and reports a checklist. Run it in a fresh session with `claude --model sonnet "/execute-qa <suite-dir>"`. Use when the user invokes /execute-qa <suite-dir>, or asks to "QA the plan", "verify the intent", or "test what we asked for, not what we built".
+name: qa
+description: Verify a suite's behavioral intent by executing qa-plan.md in a plan-blind session. Reads ONLY qa-plan.md (and context.md) — never plan.md, visual.html, or the diff — then verifies each B-n/R-n criterion against the running code. Writes real test files when the repo has a test setup; otherwise performs manual verification and reports a checklist. Run it in a fresh session with `claude --model sonnet "/qa <suite-dir>"`. Use when the user invokes /qa <suite-dir>, or asks to "QA the plan", "verify the intent", or "test what we asked for, not what we built".
 ---
 
-# /execute-qa
+# /qa
 
 Verify that the software does what the user **asked for** — not what the plan said to build. This session is deliberately blind to the plan: the criteria in `qa-plan.md` were authored from intent alone, and this skill checks them against the real, running code. Divergence between the two is exactly the signal the pipeline exists to surface.
 
 ## Usage
 
-`/execute-qa <suite-dir>`
+`/qa <suite-dir>`
 
-Designed to run in a fresh session on Sonnet after `/execute-plan` finishes — `/plan` and `/execute-plan` both print the exact command.
+Designed to run in a fresh session on Sonnet after `/build` finishes — `/blueprint` and `/build` both print the exact command.
 
 ## Blindness — hard rule
 
@@ -27,7 +27,7 @@ If you catch yourself wanting to know *how* something was implemented, stop — 
 
 ### Phase 1 — Read
 
-Read `<suite-dir>/qa-plan.md` as your first action. Validate it against `skills/plan/QA-FORMAT.md`: YAML frontmatter with `artifact: qa-plan`, `## Intent`, and at least one `B-n` criterion. If missing or malformed, stop and tell the user to re-run `/plan`'s QA stage. Optionally read `context.md` for intent background. Read `CLAUDE.md` at the project root for project conventions (test commands, tooling).
+Read `<suite-dir>/qa-plan.md` as your first action. Validate it against `skills/blueprint/QA-FORMAT.md`: YAML frontmatter with `artifact: qa-plan`, `## Intent`, and at least one `B-n` criterion. If missing or malformed, stop and tell the user to re-run `/blueprint`'s QA stage. Optionally read `context.md` for intent background. Read `CLAUDE.md` at the project root for project conventions (test commands, tooling).
 
 ### Phase 2 — Detect the test setup
 
@@ -71,7 +71,7 @@ Test files written:
   - <path>   (test mode only)
 ```
 
-For every ❌, state the observed behavior next to the expected one — no speculation about the cause, since you haven't seen the implementation and shouldn't guess at it. Recommend the follow-up plainly: divergence goes back to the implementing session or a `/plan` revision; it is not fixed here.
+For every ❌, state the observed behavior next to the expected one — no speculation about the cause, since you haven't seen the implementation and shouldn't guess at it. Recommend the follow-up plainly: divergence goes back to the implementing session or a `/blueprint` revision; it is not fixed here.
 
 Do not commit. End your turn.
 
@@ -79,7 +79,7 @@ Do not commit. End your turn.
 
 - Never read `plan.md`, `visual.html`, or the implementation diff. Application source only for test wiring, never for approach.
 - Never modify application code — not even for an "obvious" one-line fix.
-- Never weaken a criterion to make it pass; criteria change only via `/plan` revising `context.md` and re-running its blind QA author.
+- Never weaken a criterion to make it pass; criteria change only via `/blueprint` revising `context.md` and re-running its blind QA author.
 - Test mode only when the repo already has a test setup; never introduce a framework.
 - Report divergence factually (expected vs observed); do not diagnose causes you'd need the plan to know.
 - Do not commit.

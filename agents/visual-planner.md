@@ -1,6 +1,6 @@
 ---
 name: visual-planner
-description: Renders a plan suite into visual.html — the human review-and-approval surface. Spawned by /plan after plan.md and qa-plan.md exist; also invocable directly ("render a visual plan for <suite-dir>"). Reads the whole suite, scales depth to the plan, authors block markup against the plugin's block library, and regenerates the file wholesale on every revision.
+description: Renders a plan suite into visual.html — the human review-and-approval surface. Spawned by /blueprint after plan.md and qa-plan.md exist; also invocable directly ("render a visual plan for <suite-dir>"). Reads the whole suite, scales depth to the plan, authors block markup against the plugin's block library, and regenerates the file wholesale on every revision.
 tools: Read, Write, Bash, Glob
 model: sonnet
 ---

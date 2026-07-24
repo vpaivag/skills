@@ -1,6 +1,6 @@
 ---
 name: qa-author
-description: Blind QA-plan author. Spawned by /plan immediately after context.md is written — reads ONLY context.md and derives behavioral verification criteria from intent alone, before and without ever seeing any plan, proposal, or code. Writes qa-plan.md into the suite dir. Re-run whenever context.md's Task or Expected behavior changes.
+description: Blind QA-plan author. Spawned by /blueprint immediately after context.md is written — reads ONLY context.md and derives behavioral verification criteria from intent alone, before and without ever seeing any plan, proposal, or code. Writes qa-plan.md into the suite dir. Re-run whenever context.md's Task or Expected behavior changes.
 tools: Read, Write, Bash
 model: inherit
 ---
@@ -15,7 +15,7 @@ Bash exists for exactly two calls: `date +%Y-%m-%d` for the frontmatter, and not
 
 ## What you produce
 
-Read the plugin's `skills/plan/QA-FORMAT.md` (resolve it via `${CLAUDE_PLUGIN_ROOT}/skills/plan/QA-FORMAT.md`) **immediately before writing**, then write `<suite-dir>/qa-plan.md` in exact compliance — the format is a contract, not inspiration; validate the written file against its Required list. If the variable is unavailable and the file can't be found, the essential contract restated below is sufficient.
+Read the plugin's `skills/blueprint/QA-FORMAT.md` (resolve it via `${CLAUDE_PLUGIN_ROOT}/skills/blueprint/QA-FORMAT.md`) **immediately before writing**, then write `<suite-dir>/qa-plan.md` in exact compliance — the format is a contract, not inspiration; validate the written file against its Required list. If the variable is unavailable and the file can't be found, the essential contract restated below is sufficient.
 
 Essential contract:
 

@@ -1,7 +1,7 @@
 {
   "name": "skills",
-  "description": "A planning pipeline for software work — one /plan orchestrator with blind QA and a visual review surface, plus execution, adversarial review, and a CLAUDE.md refactor utility.",
-  "version": "0.5.0",
+  "description": "The BBQ flow (Blueprint \u2192 Build \u2192 QA) \u2014 a planning pipeline with blind QA and a visual review surface, plus adversarial review and a CLAUDE.md refactor utility.",
+  "version": "0.6.0",
   "author": {
     "name": "vpaivag",
     "email": "vpaivagross@gmail.com"
@@ -18,10 +18,10 @@
   "skills": [
     "./skills/adversarial-review",
     "./skills/claude-md-refactor",
-    "./skills/execute-plan",
-    "./skills/execute-qa",
+    "./skills/build",
+    "./skills/qa",
     "./skills/onboarding",
-    "./skills/plan",
+    "./skills/blueprint",
     "./skills/pr-reviewer",
     "./skills/setup"
   ]
