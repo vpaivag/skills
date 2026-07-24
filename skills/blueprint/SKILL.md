@@ -1,11 +1,11 @@
 ---
-name: plan
-description: Single front-door planning skill that takes a coding task from stated intent to an approved, executable plan suite. Gathers context (restate → explore fan-out → batched Q&A → persist context.md), gates on whether a genuine design choice exists, and scales accordingly — mechanical tasks get a direct plan, design tasks get 2–3 independent proposals red/blue-critiqued by plan-critic agents before the user selects. Writes a suite (context.md, plan.md, blind qa-plan.md, visual.html) under the configured plans directory (default `.claude/plans/`) and ends with handoff commands for /execute-plan and /execute-qa. The visual.html is the review surface — the user approves or flags the plan in the page. Use when the user invokes /plan, asks to plan a task or feature, wants a quick or deep or thorough plan, asks to "gather context before implementation", or wants a checkpoint before coding. Replaces the retired /intake, /simple-plan, and /deep-plan.
+name: blueprint
+description: Front-door planning skill that takes a coding task from stated intent to an approved, executable plan suite. Gathers context (restate → explore fan-out → batched Q&A → persist context.md), gates on whether a genuine design choice exists, and scales accordingly — mechanical tasks get a direct plan, design tasks get 2–3 independent proposals red/blue-critiqued by plan-critic agents before the user selects. Writes a suite (context.md, plan.md, blind qa-plan.md, visual.html) under the configured plans directory (default `.claude/plans/`) and ends with handoff commands for /build and /qa. The visual.html is the review surface — the user approves or flags the plan in the page. Use when the user invokes /blueprint, asks for a blueprint of a task, asks to plan a task or feature, wants a quick or deep or thorough plan, asks to "gather context before implementation", or wants a checkpoint before coding. Replaces the retired /intake, /simple-plan, and /deep-plan.
 ---
 
-# /plan
+# /blueprint
 
-Take a task from stated intent to an approved, executable plan suite in one session. The suite is consumed by fresh sessions downstream: `/execute-plan` implements `plan.md`, `/execute-qa` verifies `qa-plan.md` without ever reading the plan.
+Take a task from stated intent to an approved, executable plan suite in one session. The suite is consumed by fresh sessions downstream: `/build` implements `plan.md`, `/qa` verifies `qa-plan.md` without ever reading the plan.
 
 The skill scales to the task through a gate, not through separate skills: mechanical work gets a short direct path, work with a genuine design choice gets independent proposals and adversarial critique before the user picks a direction.
 
@@ -17,7 +17,7 @@ This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUs
 
 ## Plans directory
 
-Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` if present and use its `plansDir`; otherwise default to `.claude/plans`. The config also carries a `gitignore` boolean (default `true`) — only manage `.gitignore` when that flag is true. If the config file is missing or malformed, silently fall back to the defaults. Everywhere this skill says "the plans directory" or `<plansDir>` below, it means the resolved value.
+Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` **at the project root** if present and use its `plansDir`; otherwise default to `.claude/plans` **relative to the project root** (the repository you are working in). Never resolve either path against the user's home directory — `~/.claude/plans` belongs to Claude Code itself and is always wrong here; suites live inside the repo. The config also carries a `gitignore` boolean (default `true`) — only manage `.gitignore` when that flag is true. If the config file is missing or malformed, silently fall back to the defaults. Everywhere this skill says "the plans directory" or `<plansDir>` below, it means the resolved value.
 
 ## Project conventions
 
@@ -28,7 +28,7 @@ Before Explore, read `CLAUDE.md` at the project root if it exists. It contains r
 - **Read-only on code.** During every stage, code access is `Read`, `Glob`, `Grep`, and read-only `Bash` (e.g. `git log`, `git diff --stat`, `ls`). The only writes are the suite directory contents, an optional `.gitignore` append, and — only on the mechanical path's "implement now" option — the code edits the user approved.
 - **The orchestrator owns the conversation.** Subagents cannot call `AskUserQuestion`; all Q&A, the gate decision, proposal selection, and approval happen in this session. Subagents earn their isolation through parallelism (explore fan-out) or deliberate blindness (proposal authors, `plan-critic`, `qa-author`).
 - **The suite directory is the interface between agents.** Subagents read and write files in the suite dir; do not paste large artifacts between prompts when a file path will do.
-- **Do not auto-invoke `/execute-plan`, `/execute-qa`, or any other skill.** The handoff is the user's job — fresh sessions keep the executor's and QA's context clean.
+- **Do not auto-invoke `/build`, `/qa`, or any other skill.** The handoff is the user's job — fresh sessions keep the executor's and QA's context clean.
 
 ## Stages
 
@@ -38,7 +38,7 @@ Execute these stages in order. Do not skip ahead.
 
 Read the user's task description.
 
-- **If `/plan` was invoked with no task description** (or one so empty it conveys no intent), stop and reply with a short line asking for the task — e.g. "Give me something to plan — what are you trying to do?" — then end the turn. Do not touch the codebase. Do not create any directory.
+- **If `/blueprint` was invoked with no task description** (or one so empty it conveys no intent), stop and reply with a short line asking for the task — e.g. "Give me something to plan — what are you trying to do?" — then end the turn. Do not touch the codebase. Do not create any directory.
 - **Otherwise**, restate the task in one short paragraph in your own words. Do not editorialize — just reflect the task back so the user can correct misreadings before any exploration.
 
 ### Stage 2 — Explore
@@ -64,7 +64,17 @@ Classify the work. Recommend the **design path** if any one of these fires; othe
 
 The honesty rule from the old design stage still governs: if you find yourself manufacturing a weak alternative just to justify the design path, that's the signal there is only one viable approach — take the mechanical path and document the rejected non-starters in one sentence each.
 
-Print the classification and which criterion fired (or "mechanical — no gate criterion met"), then confirm via `AskUserQuestion`: "Proceed on the <path> path?" with options "Proceed (Recommended)", "Use the other path", "Cancel". On Cancel, stop — nothing has been written yet.
+Print the classification as a visible block — this output is mandatory on both paths, mechanical included:
+
+```
+🚦 Gate: design (<criterion>: <one-line justification>)
+```
+or
+```
+🚦 Gate: mechanical — no criterion met
+```
+
+Then confirm via `AskUserQuestion`: "Proceed on the <path> path?" with options "Proceed (Recommended)", "Use the other path", "Cancel". On Cancel, stop — nothing has been written yet. On Proceed, continue immediately to Stage 5 in the same turn — the confirmation is a fork in the road, not a resting point.
 
 ### Stage 5 — Persist context
 
@@ -75,6 +85,8 @@ Print the classification and which criterion fired (or "mechanical — no gate c
 5. Read [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md) **now — not earlier, never from memory** — then write `context.md` in exact compliance: same frontmatter keys, same section names, same `EB-n` ID scheme. The format is a contract, not inspiration. After writing, re-check the file against the format's Required list and fix any deviation before proceeding. The `## Expected behavior` section must be implementation-free — it is the blind QA author's entire world.
 
 **Immediately after writing `context.md`, spawn the `qa-author` agent in the background.** Pass it only the path to `context.md` and the suite dir to write into. It runs while the remaining stages proceed — its input never changes with the design work, so there is nothing to wait for. If a later revision changes `context.md`'s Task or Expected behavior, re-run it.
+
+Persisting `context.md` is a **waypoint, not a deliverable** — do not end the turn here on either path. The run continues through Specify, QA, and Visual without stopping; a `/blueprint` invocation that ends with only a `context.md` on disk is a failed run.
 
 ### Stage 6 — Proposals & critique (design path only)
 
@@ -127,8 +139,8 @@ Then wait for the user. On their next message:
 Plan approved: <suite-dir>
 
 Run in fresh sessions, in order:
-  claude --model sonnet "/execute-plan <suite-dir>/plan.md"
-  claude --model sonnet "/execute-qa <suite-dir>"
+  claude --model sonnet "/build <suite-dir>/plan.md"
+  claude --model sonnet "/qa <suite-dir>"
 
 Then, for a skeptical pass on the diff:
   claude "/adversarial-review"
@@ -145,5 +157,7 @@ End the turn.
 - `plan-critic` agents receive one proposal each — never the codebase or sibling proposals.
 - `visual.html` is a projection: regenerated wholesale on every revision, never hand-edited, never the only home of a decision.
 - **Formats are contracts, delivered just-in-time.** Read the relevant `*-FORMAT.md` immediately before writing its artifact — never earlier in the session, never from memory — and validate the written file against the format's Required list. Inventing your own template shape is a defect, not a style choice.
+- **A run is complete only when the suite is complete.** Before ending any turn that isn't a user checkpoint (gate confirm, proposal selection, review verdict) or a cancel, verify the suite contains `context.md`, `plan.md`, `qa-plan.md`, and `visual.html`, and that the Stage 9 review block has been printed. Both paths — mechanical runs do not get to stop early.
+- **Paths are project-rooted.** All suite paths resolve against the project root, never `~/.claude/`.
 - Do not print handoff commands before approval. Do not auto-invoke downstream skills.
 - No manufactured strawmen: a padded alternatives list is a signal to take the mechanical path, not a design review.

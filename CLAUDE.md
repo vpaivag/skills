@@ -14,11 +14,11 @@ Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on dema
 
   Agents are the analogous rule with two places: `agents/<name>.md` (auto-discovered, no manifest entry) and the Agents table in `README.md`.
 - **Version lives in `plugin.json` only.** Bump `version` in `.claude-plugin/plugin.json` for each release. Do **not** add a `version` field to `.claude-plugin/marketplace.json` — omitting it lets every git commit count as a new version, which is what enables `/plugin update` to detect changes without a manual marketplace bump. (See https://code.claude.com/docs/en/plugin-marketplaces.)
-- **Companion files live beside SKILL.md.** Some skills reference siblings (e.g. `skills/plan/CONTEXT-FORMAT.md`, `skills/plan/PLAN-FORMAT.md`, `skills/plan/QA-FORMAT.md`). Don't move or rename them without updating the references inside `SKILL.md` and `agents/*.md`.
+- **Companion files live beside SKILL.md.** Some skills reference siblings (e.g. `skills/blueprint/CONTEXT-FORMAT.md`, `skills/blueprint/PLAN-FORMAT.md`, `skills/blueprint/QA-FORMAT.md`). Don't move or rename them without updating the references inside `SKILL.md` and `agents/*.md`.
 - **`*-FORMAT.md` files are contracts, enforced just-in-time.** Skills and agents must instruct reading the format file immediately before writing its artifact ("now — not earlier, never from memory") and validating the written file against the format's Required list. Artifact formats use real YAML frontmatter and stable IDs (`EB-n`, `AC-n`, `B-n`) — never the retired `> **Field:**` blockquote style.
 - **Preserve the user's voice in skill prose.** Don't rewrite phrasing into a different style — the wording in each `SKILL.md` is intentional.
 - **Static assets and vanilla client-side JS only.** `assets/visual/` may hold CSS, dependency-free browser JS, HTML templates, and the vendored `mermaid.min.js` (plugin-side only — never copied into suite dirs; opt-in per the rule in `assets/visual/BLOCKS.md`). No build step, no package managers, no runtime dependencies, no servers, no CI scaffolding.
-- **Split context is the pipeline's design principle.** `qa-author` sees only `context.md`; `plan-critic` sees one proposal; `/execute-qa` never reads `plan.md`. Don't "improve" a skill or agent by giving a blind role more context — the blindness is the feature.
+- **Split context is the pipeline's design principle.** `qa-author` sees only `context.md`; `plan-critic` sees one proposal; `/qa` never reads `plan.md`. Don't "improve" a skill or agent by giving a blind role more context — the blindness is the feature.
 
 ## Layout
 

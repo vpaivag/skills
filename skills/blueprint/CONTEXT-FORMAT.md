@@ -1,6 +1,6 @@
 # CONTEXT-FORMAT
 
-The shape of `context.md` — the intake artifact `/plan` writes into the suite directory before any planning happens. This file is the **only** input the blind `qa-author` agent receives, so it must capture intent and observable behavior without describing implementation.
+The shape of `context.md` — the intake artifact `/blueprint` writes into the suite directory before any planning happens. This file is the **only** input the blind `qa-author` agent receives, so it must capture intent and observable behavior without describing implementation.
 
 ## Schema
 

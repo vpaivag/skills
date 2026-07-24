@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Configure where plan suites live and whether the plans directory is gitignored. Writes `.claude/plans-config.json` with `plansDir` (default `.claude/plans`) and `gitignore` (default `true`) keys. The planning skills (`/plan`, `/execute-plan`, `/execute-qa`) read this config to resolve the plans directory, falling back to `.claude/plans` when the config is absent. Use when the user invokes `/setup`, asks to "configure the plans directory", "change where plans live", "set up the plans skill config", or wants to opt in/out of gitignoring the plans directory.
+description: Configure where plan suites live and whether the plans directory is gitignored. Writes `.claude/plans-config.json` with `plansDir` (default `.claude/plans`) and `gitignore` (default `true`) keys. The planning skills (`/blueprint`, `/build`, `/qa`) read this config to resolve the plans directory, falling back to `.claude/plans` when the config is absent. Use when the user invokes `/setup`, asks to "configure the plans directory", "change where plans live", "set up the plans skill config", or wants to opt in/out of gitignoring the plans directory.
 ---
 
 # /setup
@@ -29,7 +29,7 @@ This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUs
 }
 ```
 
-- `plansDir`: string, relative or absolute path. Default `.claude/plans`. Absolute paths are allowed (some users keep plans outside the repo).
+- `plansDir`: string, relative or absolute path. Default `.claude/plans`. Relative paths resolve against the **project root** (the repository), never the user's home `~/.claude/`. Absolute paths are allowed (some users keep plans outside the repo).
 - `gitignore`: boolean. If `true`, skills ensure `plansDir` is in `.gitignore`. If `false`, skills do not touch `.gitignore`.
 
 ## Phases

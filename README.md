@@ -2,13 +2,13 @@
 
 Personal collection of agent skills covering planning, repo setup, and onboarding workflows.
 
-Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. The planning skills compose into one pipeline:
+Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. The planning skills compose into the **BBQ flow** — **B**lueprint → **B**uild → **Q**A:
 
 ```mermaid
 flowchart TD
-    plan[/plan/]
-    execute[/execute-plan/]
-    qa[/execute-qa/]
+    plan[/blueprint/]
+    execute[/build/]
+    qa[/qa/]
     adv[/adversarial-review/]
 
     plan -->|"plan.md · fresh session, sonnet"| execute
@@ -27,7 +27,7 @@ flowchart TD
     class critic,author,visual helper
 ```
 
-`/plan` is the single front door: it gathers context, gates on whether a genuine design choice exists, and produces a suite — `context.md`, one executable `plan.md`, a `qa-plan.md` authored **blind** from intent alone, and a `visual.html` review surface where you approve or flag the plan in your browser. Execution and QA then run in fresh sessions with deliberately separated knowledge: the executor never does behavioral QA, and QA never sees the plan.
+`/blueprint` is the single front door: it gathers context, gates on whether a genuine design choice exists, and produces a suite — `context.md`, one executable `plan.md`, a `qa-plan.md` authored **blind** from intent alone, and a `visual.html` review surface where you approve or flag the plan in your browser. Execution and QA then run in fresh sessions with deliberately separated knowledge: the executor never does behavioral QA, and QA never sees the plan.
 
 ## Contents
 
@@ -36,9 +36,9 @@ flowchart TD
   - [As a Claude Code plugin](#as-a-claude-code-plugin)
 - [Skills](#skills)
   - [Planning](#planning)
-    - [plan](#plan)
-    - [execute-plan](#execute-plan)
-    - [execute-qa](#execute-qa)
+    - [blueprint](#blueprint)
+    - [build](#build)
+    - [qa](#qa)
   - [Repo setup](#repo-setup)
     - [setup](#setup)
     - [claude-md-refactor](#claude-md-refactor)
@@ -68,7 +68,7 @@ npx skills@latest add vpaivag/skills
 Install a specific skill:
 
 ```bash
-npx skills@latest add vpaivag/skills --skill plan
+npx skills@latest add vpaivag/skills --skill blueprint
 ```
 
 Target a specific agent (e.g. Claude Code):
@@ -77,7 +77,7 @@ Target a specific agent (e.g. Claude Code):
 npx skills@latest add vpaivag/skills -a claude-code
 ```
 
-Note: the CLI installs skills only — the declared agents (`plan-critic`, `qa-author`, `visual-planner`) and the visual asset library ship with the Claude Code plugin, so `/plan`'s subagent stages and `visual.html` need the plugin install below.
+Note: the CLI installs skills only — the declared agents (`plan-critic`, `qa-author`, `visual-planner`) and the visual asset library ship with the Claude Code plugin, so `/blueprint`'s subagent stages and `visual.html` need the plugin install below.
 
 ### As a Claude Code plugin
 
@@ -121,9 +121,9 @@ Or use a local clone instead of GitHub:
 
 ### Planning
 
-#### plan
+#### blueprint
 
-**Trigger:** `/plan <task>`, or asking to plan a task or feature, gather context before implementation, or get a quick/deep plan.
+**Trigger:** `/blueprint <task>`, or asking to plan a task or feature, gather context before implementation, or get a quick/deep plan.
 
 The single planning front door — it replaced the retired `/intake`, `/simple-plan`, and `/deep-plan`. One conversational session takes a task from stated intent to an approved suite: restate → parallel explore fan-out → **batched** Q&A (no question drip) → persist `context.md` → gate.
 
@@ -138,25 +138,25 @@ Either way the suite ends up with:
 
 Run it on a strong model (Opus or Fable) — the handoff commands it prints pin Sonnet for the downstream sessions.
 
-→ [`skills/plan`](./skills/plan)
+→ [`skills/blueprint`](./skills/blueprint)
 
-#### execute-plan
+#### build
 
-**Trigger:** `/execute-plan <suite-dir>` (or the `plan.md` path directly).
+**Trigger:** `/build <suite-dir>` (or the `plan.md` path directly).
 
-Executes the suite's single `plan.md` in a fresh session: read the plan first, confirm with you, implement the phases in order with a checkpoint line at each boundary, then walk the mechanical `AC-n` acceptance criteria (✅/❌ — never claims completion with a ❌). Ends by printing the `/execute-qa` handoff; it never runs behavioral QA itself, because a session that just implemented the code is the wrong judge of whether the code does what was asked.
+Executes the suite's single `plan.md` in a fresh session: read the plan first, confirm with you, implement the phases in order with a checkpoint line at each boundary, then walk the mechanical `AC-n` acceptance criteria (✅/❌ — never claims completion with a ❌). Ends by printing the `/qa` handoff; it never runs behavioral QA itself, because a session that just implemented the code is the wrong judge of whether the code does what was asked.
 
-`/plan` prints the exact command with the model baked in: `claude --model sonnet "/execute-plan <suite-dir>/plan.md"`.
+`/blueprint` prints the exact command with the model baked in: `claude --model sonnet "/build <suite-dir>/plan.md"`.
 
-→ [`skills/execute-plan`](./skills/execute-plan)
+→ [`skills/build`](./skills/build)
 
-#### execute-qa
+#### qa
 
-**Trigger:** `/execute-qa <suite-dir>`, or asking to "verify the intent" / "test what we asked for, not what we built".
+**Trigger:** `/qa <suite-dir>`, or asking to "verify the intent" / "test what we asked for, not what we built".
 
 Verifies behavioral intent in a **plan-blind** session: it reads only `qa-plan.md` (and `context.md`) — never `plan.md`, `visual.html`, or the diff — and checks each criterion against the running code from the outside, the way a user would. If the repo has a test setup, criteria become real test files following the repo's conventions, annotated with their `B-n`/`R-n` IDs; if not, criteria are verified live and reported as a manual checklist. Failures are reported as expected-vs-observed divergence, never "fixed" here and never diagnosed by peeking at the implementation.
 
-→ [`skills/execute-qa`](./skills/execute-qa)
+→ [`skills/qa`](./skills/qa)
 
 ### Repo setup
 
@@ -164,7 +164,7 @@ Verifies behavioral intent in a **plan-blind** session: it reads only `qa-plan.m
 
 **Trigger:** `/setup` or asking to configure where plans live, set up the plans directory, or whether plans should be gitignored.
 
-Writes a small `.claude/plans-config.json` that the planning skills (`/plan`, `/execute-plan`, `/execute-qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
+Writes a small `.claude/plans-config.json` that the planning skills (`/blueprint`, `/build`, `/qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
 
 → [`skills/setup`](./skills/setup)
 
@@ -220,7 +220,7 @@ Narrower than `pr-reviewer` (no intent-gathering, no GitHub posting); the natura
 
 ## Agents
 
-The plugin ships three declared agents under `agents/`, spawned by `/plan` (and invocable directly). Each carries its expertise in its own system prompt and pins the model that fits its role:
+The plugin ships three declared agents under `agents/`, spawned by `/blueprint` (and invocable directly). Each carries its expertise in its own system prompt and pins the model that fits its role:
 
 | Agent | Model | Role | Deliberately blind to |
 |---|---|---|---|
@@ -243,10 +243,10 @@ assets/
 skills/
   adversarial-review/SKILL.md
   claude-md-refactor/SKILL.md
-  execute-plan/SKILL.md
-  execute-qa/SKILL.md
+  build/SKILL.md
+  qa/SKILL.md
   onboarding/SKILL.md
-  plan/SKILL.md      # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md
+  blueprint/SKILL.md # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md
   pr-reviewer/SKILL.md
   setup/SKILL.md
 ```

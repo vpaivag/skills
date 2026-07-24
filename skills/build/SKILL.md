@@ -1,17 +1,17 @@
 ---
-name: execute-plan
-description: Execute a plan.md produced by /plan. Reads the plan, confirms with the user, implements the phases in order, verifies each mechanical acceptance criterion (AC-n), and ends with the /execute-qa handoff. Run it in a fresh session with `claude --model sonnet "/execute-plan <path>"`. Use when the user invokes /execute-plan <path>.
+name: build
+description: Execute a plan.md produced by /plan. Reads the plan, confirms with the user, implements the phases in order, verifies each mechanical acceptance criterion (AC-n), and ends with the /qa handoff. Run it in a fresh session with `claude --model sonnet "/build <path>"`. Use when the user invokes /build <path>.
 ---
 
-# /execute-plan
+# /build
 
-Implement the plan at the path provided by the user. Every suite produced by `/plan` contains exactly one `plan.md` — there are no chunks, no index, and no status files.
+Implement the plan at the path provided by the user. Every suite produced by `/blueprint` contains exactly one `plan.md` — there are no chunks, no index, and no status files.
 
 ## Usage
 
-`/execute-plan <suite-dir>` or `/execute-plan <suite-dir>/plan.md`
+`/build <suite-dir>` or `/build <suite-dir>/plan.md`
 
-If given the suite dir, the plan is `plan.md` inside it. This skill is designed to run in a fresh session on Sonnet — `/plan` prints the exact command (`claude --model sonnet "/execute-plan …"`); planning quality was already paid for upstream, execution follows the contract.
+If given the suite dir, the plan is `plan.md` inside it. Suite paths are relative to the project root (the repository), never the user's home `~/.claude/`. This skill is designed to run in a fresh session on Sonnet — `/blueprint` prints the exact command (`claude --model sonnet "/build …"`); planning quality was already paid for upstream, execution follows the contract.
 
 ## Asking questions
 
@@ -23,7 +23,7 @@ This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUs
 
 Read `plan.md` as your **first action**. Do not explore or implement before reading it. If the path is missing, the file doesn't exist, or the file is malformed, stop and tell the user.
 
-Required in every plan file (per `skills/plan/PLAN-FORMAT.md`):
+Required in every plan file (per `skills/blueprint/PLAN-FORMAT.md`):
 
 - YAML frontmatter with `artifact: plan`, `title`, `path`, `context`, `created`
 - `## Context`, `## Approach`, `## Files changed`, `## Phases`, `## Risks & edge cases`, `## Acceptance criteria`
@@ -48,7 +48,7 @@ Then ask in plain text: "Plan looks current and correct? Reply 'go' to proceed, 
 
 Stop and wait. Do not proceed until the user explicitly approves.
 
-If the user reports that the plan is stale (e.g. "the file structure has changed since this was written"), stop. Tell the user the plan should be revised with `/plan` — do not patch a stale plan in execution mode.
+If the user reports that the plan is stale (e.g. "the file structure has changed since this was written"), stop. Tell the user the plan should be revised with `/blueprint` — do not patch a stale plan in execution mode.
 
 ### Phase 3 — Implement
 
@@ -72,7 +72,7 @@ After all phases are complete, walk through the `AC-n` checklist from the plan. 
 - Mark ✅ or ❌
 - For ❌, briefly state why it can't be satisfied as-specified
 
-These are the plan's **mechanical** criteria only. Do not attempt behavioral verification here — that is `/execute-qa`'s job, and doing it in this session would mean grading your own homework.
+These are the plan's **mechanical** criteria only. Do not attempt behavioral verification here — that is `/qa`'s job, and doing it in this session would mean grading your own homework.
 
 ### Phase 5 — Report & handoff
 
@@ -92,7 +92,7 @@ Notes:
   <any deviations from the plan, with reasoning>
 
 Next — behavioral QA, in a fresh session (this session is biased by its own implementation):
-  claude --model sonnet "/execute-qa <suite-dir>"
+  claude --model sonnet "/qa <suite-dir>"
 ```
 
 If any criteria are ❌, do not claim the work is complete. Do not commit — leave that to the user. End your turn.

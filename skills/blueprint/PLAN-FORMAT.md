@@ -1,6 +1,6 @@
 # Plan format
 
-The shape of `plan.md` — the single executable plan `/plan` writes into the suite directory. There is exactly one plan file per suite; there are no chunks, no index, and no status machinery. `/execute-plan` consumes this file as its contract.
+The shape of `plan.md` — the single executable plan `/blueprint` writes into the suite directory. There is exactly one plan file per suite; there are no chunks, no index, and no status machinery. `/build` consumes this file as its contract.
 
 ## Schema
 

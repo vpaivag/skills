@@ -1,6 +1,6 @@
 ---
 name: plan-critic
-description: Split-context red/blue critic for a single plan proposal. Spawned by /plan during the design path — receives exactly one proposal plus the task constraints, never the codebase or sibling proposals, and returns only the attacks that survive its own repair attempt. Use one critic per proposal.
+description: Split-context red/blue critic for a single plan proposal. Spawned by /blueprint during the design path — receives exactly one proposal plus the task constraints, never the codebase or sibling proposals, and returns only the attacks that survive its own repair attempt. Use one critic per proposal.
 tools: Read
 model: opus
 ---
