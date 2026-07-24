@@ -9,7 +9,7 @@
     {
       "name": "skills",
       "source": "./",
-      "description": "Skills for planning, executing, tracking, and reviewing software work — plus a CLAUDE.md refactor utility.",
+      "description": "A planning pipeline for software work — one /plan orchestrator with blind QA and a visual review surface, plus execution, adversarial review, and a CLAUDE.md refactor utility.",
       "author": {
         "name": "vpaivag",
         "email": "vpaivagross@gmail.com"

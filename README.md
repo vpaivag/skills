@@ -2,32 +2,32 @@
 
 Personal collection of agent skills covering planning, repo setup, and onboarding workflows.
 
-Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. The planning skills compose into one loop:
+Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. The planning skills compose into one pipeline:
 
 ```mermaid
 flowchart TD
-    intake[/intake/]
-    simple[/simple-plan/]
-    deep[/deep-plan/]
+    plan[/plan/]
     execute[/execute-plan/]
-    review[/review-plan/]
-    tracker(plan-tracker)
+    qa[/execute-qa/]
+    adv[/adversarial-review/]
 
-    intake -->|straightforward| simple
-    intake -->|ADR-gate fires| deep
-    deep --> execute
-    execute --> review
+    plan -->|"plan.md · fresh session, sonnet"| execute
+    execute -->|"qa-plan.md · fresh session, blind to the plan"| qa
+    qa --> adv
 
-    deep -.reads-output.-> tracker
-    tracker -.tracks-changes.-> execute
+    critic(plan-critic)
+    author(qa-author)
+    visual(visual-planner)
+
+    plan -.red/blue critique.-> critic
+    plan -.authors qa-plan blind.-> author
+    plan -.renders review surface.-> visual
 
     classDef helper fill:#f5f5f5,stroke:#999,stroke-dasharray:4 3,color:#555
-    class tracker helper
+    class critic,author,visual helper
 ```
 
-_Diagram shows the planning loop; see the clusters below for setup and onboarding skills._
-
-`/intake` is the recommended front door — it gathers context and points you at the right planner. You can still invoke `/deep-plan` or `/simple-plan` directly if you already know which one fits.
+`/plan` is the single front door: it gathers context, gates on whether a genuine design choice exists, and produces a suite — `context.md`, one executable `plan.md`, a `qa-plan.md` authored **blind** from intent alone, and a `visual.html` review surface where you approve or flag the plan in your browser. Execution and QA then run in fresh sessions with deliberately separated knowledge: the executor never does behavioral QA, and QA never sees the plan.
 
 ## Contents
 
@@ -36,12 +36,9 @@ _Diagram shows the planning loop; see the clusters below for setup and onboardin
   - [As a Claude Code plugin](#as-a-claude-code-plugin)
 - [Skills](#skills)
   - [Planning](#planning)
-    - [intake](#intake)
-    - [simple-plan](#simple-plan)
-    - [deep-plan](#deep-plan)
+    - [plan](#plan)
     - [execute-plan](#execute-plan)
-    - [plan-tracker](#plan-tracker)
-    - [review-plan](#review-plan)
+    - [execute-qa](#execute-qa)
   - [Repo setup](#repo-setup)
     - [setup](#setup)
     - [claude-md-refactor](#claude-md-refactor)
@@ -50,6 +47,7 @@ _Diagram shows the planning loop; see the clusters below for setup and onboardin
   - [Standalone](#standalone)
     - [pr-reviewer](#pr-reviewer)
     - [adversarial-review](#adversarial-review)
+- [Agents](#agents)
 - [Layout](#layout)
 - [Contributing](#contributing)
 
@@ -70,7 +68,7 @@ npx skills@latest add vpaivag/skills
 Install a specific skill:
 
 ```bash
-npx skills@latest add vpaivag/skills --skill deep-plan
+npx skills@latest add vpaivag/skills --skill plan
 ```
 
 Target a specific agent (e.g. Claude Code):
@@ -78,6 +76,8 @@ Target a specific agent (e.g. Claude Code):
 ```bash
 npx skills@latest add vpaivag/skills -a claude-code
 ```
+
+Note: the CLI installs skills only — the declared agents (`plan-critic`, `qa-author`, `visual-planner`) and the visual asset library ship with the Claude Code plugin, so `/plan`'s subagent stages and `visual.html` need the plugin install below.
 
 ### As a Claude Code plugin
 
@@ -121,71 +121,42 @@ Or use a local clone instead of GitHub:
 
 ### Planning
 
-#### intake
+#### plan
 
-**Trigger:** `/intake` or asking to "start a new task", "scope this out", or wanting help deciding whether a task needs a deep plan.
+**Trigger:** `/plan <task>`, or asking to plan a task or feature, gather context before implementation, or get a quick/deep plan.
 
-Short, focused Q&A front door for any new task. Asks up to a handful of clarifying questions, writes a `context.md` capturing the task and the resolved assumptions, then **recommends** either `/simple-plan` or `/deep-plan` based on an ADR-gate (hard-to-reverse, surprising-without-context, real-tradeoff, or cross-concern — task spans multiple distinct kinds of change). File count is deliberately not a criterion: a 30-file uniform rename stays in `/simple-plan`. The downstream planner adopts the same suite directory, so no context is lost between intake and planning.
+The single planning front door — it replaced the retired `/intake`, `/simple-plan`, and `/deep-plan`. One conversational session takes a task from stated intent to an approved suite: restate → parallel explore fan-out → **batched** Q&A (no question drip) → persist `context.md` → gate.
 
-Highlights:
-- **Capped questions.** Won't grill you — gathers just enough to disambiguate.
-- **Picks the right planner.** ADR-gate rules pick `/deep-plan` only when it's actually warranted, otherwise routes to `/simple-plan`.
-- **Hands off cleanly.** Writes `context.md` into a suite dir the planner picks up automatically.
+The gate decides how much process the task deserves:
+- **Mechanical path** — no genuine design choice: straight to a single direct plan. Small tasks can optionally be implemented in-session after approval.
+- **Design path** — a gate criterion fired (hard-to-reverse, surprising-without-context, real-tradeoff, cross-concern): 2–3 independent proposal agents, each proposal red/blue-critiqued by a split-context `plan-critic` that never sees the codebase or the other proposals, then you pick the direction with the surviving critiques on the table.
 
-→ [`skills/intake`](./skills/intake)
+Either way the suite ends up with:
+- `plan.md` — one executable plan (phases, not chunks; pure text; interfaces and intent, never implementation bodies)
+- `qa-plan.md` — behavioral criteria authored by the `qa-author` agent from `context.md` **only**, before and without ever seeing the chosen approach
+- `visual.html` — the review surface: file map, phases, contract diffs, diagrams, QA coverage map. Approve or flag sections in the browser; the verdict comes back via `review.json` (File System Access API) or copy-paste.
 
-#### simple-plan
+Run it on a strong model (Opus or Fable) — the handoff commands it prints pin Sonnet for the downstream sessions.
 
-**Trigger:** `/simple-plan` or asking for a lightweight plan for a straightforward task.
-
-Lightweight planner for mechanical or bounded tasks where `/deep-plan`'s full Restate → Explore → Design → Specify → Risk → Verify treatment is overkill. Produces a single `simple-plan.md` in a suite directory and, if you approve, implements it in the same session — no `/execute-plan` handoff, no chunk decomposition, no `index.md` (so `/plan-tracker` and `/execute-plan` ignore it by design).
-
-Use this when the work is mechanical (rename a field across a codebase), a small bug fix, a one-file addition, or otherwise lacks real design choices. If a task turns out to be deeper than expected, switch to `/deep-plan`.
-
-→ [`skills/simple-plan`](./skills/simple-plan)
-
-#### deep-plan
-
-**Trigger:** `/deep-plan` or asking for a deep/thorough plan before implementation.
-
-Produces a rigorous, self-contained implementation plan for a coding task. Explores the codebase read-only, considers alternatives, enumerates risks, and writes a **plan suite** — a directory containing an `index.md` plus one or more chunk files — that can be picked up and executed by a fresh Claude Code session with no prior conversation context.
-
-Highlights:
-- **Read-only during planning.** No edits, no git mutations, no side effects until the final write phase.
-- **Adopts intake context when present.** If invoked on (or after) an `/intake` run, it picks up the suite dir and seeds Restate from `context.md`. Works standalone too.
-- **User checkpoint on real tradeoffs.** When ≥2 alternatives are genuinely viable, asks you which to plan instead of locking in silently.
-- **Detects under-decomposition.** Suggests splits when a plan contains multiple internally-coherent units of work.
-- **Hand-off ready.** Output is designed to be executed via `/execute-plan` with zero context loss.
-
-→ [`skills/deep-plan`](./skills/deep-plan)
+→ [`skills/plan`](./skills/plan)
 
 #### execute-plan
 
-**Trigger:** `/execute-plan <path-to-chunk-file>`.
+**Trigger:** `/execute-plan <suite-dir>` (or the `plan.md` path directly).
 
-Executes a chunk file produced by `/deep-plan`. Reads the specified chunk, validates suite dependencies via the suite index, confirms the file list and order with the user, implements changes in sequence, verifies each acceptance criterion, and prompts for the final status update on the suite.
+Executes the suite's single `plan.md` in a fresh session: read the plan first, confirm with you, implement the phases in order with a checkpoint line at each boundary, then walk the mechanical `AC-n` acceptance criteria (✅/❌ — never claims completion with a ❌). Ends by printing the `/execute-qa` handoff; it never runs behavioral QA itself, because a session that just implemented the code is the wrong judge of whether the code does what was asked.
 
-Works on both single-chunk suites (`plan.md`) and individual chunks of a multi-chunk suite.
+`/plan` prints the exact command with the model baked in: `claude --model sonnet "/execute-plan <suite-dir>/plan.md"`.
 
 → [`skills/execute-plan`](./skills/execute-plan)
 
-#### plan-tracker
+#### execute-qa
 
-**Trigger:** `/plan-tracker` or questions like "what's the state of the plan?", "what's next?", "what's left?".
+**Trigger:** `/execute-qa <suite-dir>`, or asking to "verify the intent" / "test what we asked for, not what we built".
 
-Read-only status view for plan suites in the current project. Detects the active suite, shows per-chunk status and dependency relationships, and surfaces what's runnable next. Never modifies plan files.
+Verifies behavioral intent in a **plan-blind** session: it reads only `qa-plan.md` (and `context.md`) — never `plan.md`, `visual.html`, or the diff — and checks each criterion against the running code from the outside, the way a user would. If the repo has a test setup, criteria become real test files following the repo's conventions, annotated with their `B-n`/`R-n` IDs; if not, criteria are verified live and reported as a manual checklist. Failures are reported as expected-vs-observed divergence, never "fixed" here and never diagnosed by peeking at the implementation.
 
-→ [`skills/plan-tracker`](./skills/plan-tracker)
-
-#### review-plan
-
-**Trigger:** `/review-plan` or asking "is the plan actually done?", "did we deliver what the plan promised?", "is the suite status honest?".
-
-Read-only audit that closes the planning loop. Compares a suite's `index.md` goal and per-chunk acceptance criteria against the actual git diff since the suite was created, then reports goal alignment, coverage gaps, drift (changes not traceable to any chunk), and status-sanity issues (chunks marked `done` whose criteria don't appear satisfied in the code).
-
-Pairs with `plan-tracker`: tracker shows recorded status, review-plan checks whether that status is telling the truth. Never edits the plan, never marks chunks done, never touches code.
-
-→ [`skills/review-plan`](./skills/review-plan)
+→ [`skills/execute-qa`](./skills/execute-qa)
 
 ### Repo setup
 
@@ -193,7 +164,7 @@ Pairs with `plan-tracker`: tracker shows recorded status, review-plan checks whe
 
 **Trigger:** `/setup` or asking to configure where plans live, set up the plans directory, or whether plans should be gitignored.
 
-Writes a small `.claude/plans-config.json` that the planning skills (`/intake`, `/deep-plan`, `/simple-plan`, `/plan-tracker`, `/execute-plan`, `/review-plan`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
+Writes a small `.claude/plans-config.json` that the planning skills (`/plan`, `/execute-plan`, `/execute-qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
 
 → [`skills/setup`](./skills/setup)
 
@@ -243,35 +214,41 @@ Adversarial code review built on **split context**, faithful to the [Bun-in-Rust
 - **Reviewers see the diff, not the story** — leaking intent is what launders a bug into "looks fine".
 - **Report by default** — fixes are applied only if you ask after seeing the findings.
 
-Narrower than `pr-reviewer` (no intent-gathering, no GitHub posting); the lightweight local counterpart to `/code-review ultra`.
+Narrower than `pr-reviewer` (no intent-gathering, no GitHub posting); the natural last step of the planning pipeline, and the lightweight local counterpart to `/code-review ultra`.
 
 → [`skills/adversarial-review`](./skills/adversarial-review)
 
-## Other useful skills
+## Agents
 
-This bundle isn't the only one worth installing. [`mattpocock/skills`](https://github.com/mattpocock/skills) has a great companion set — examples:
+The plugin ships three declared agents under `agents/`, spawned by `/plan` (and invocable directly). Each carries its expertise in its own system prompt and pins the model that fits its role:
 
-- **`grill-me`** — interview-style stress test that drills into a plan or design until every branch of the decision tree is resolved.
-- **`improve-codebase-architecture`** — guided pass for spotting and improving structural problems across a codebase.
+| Agent | Model | Role | Deliberately blind to |
+|---|---|---|---|
+| `plan-critic` | opus | Red/blue critique of one proposal; only attacks that survive its own repair attempt are returned | the codebase, sibling proposals |
+| `qa-author` | inherit | Writes `qa-plan.md` from `context.md` alone — criteria test what was *asked*, not what was built | the plan, proposals, all code |
+| `visual-planner` | sonnet | Renders the suite into `visual.html` against the block library in `assets/visual/`; adds form, never facts | — |
 
-See the full list at [github.com/mattpocock/skills](https://github.com/mattpocock/skills).
+Split context is the design principle throughout: an agent that hasn't seen the design can't inherit the design's blind spots.
 
 ## Layout
 
 ```
 .claude-plugin/plugin.json
+agents/
+  plan-critic.md
+  qa-author.md
+  visual-planner.md
+assets/
+  visual/            # block library for visual.html: template, blocks.css/js, BLOCKS.md, mermaid (opt-in)
 skills/
   adversarial-review/SKILL.md
   claude-md-refactor/SKILL.md
-  deep-plan/SKILL.md
   execute-plan/SKILL.md
-  intake/SKILL.md
+  execute-qa/SKILL.md
   onboarding/SKILL.md
-  plan-tracker/SKILL.md
+  plan/SKILL.md      # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md
   pr-reviewer/SKILL.md
-  review-plan/SKILL.md
   setup/SKILL.md
-  simple-plan/SKILL.md
 ```
 
 ## Contributing
@@ -283,6 +260,17 @@ Hit unexpected behaviour from one of these skills, or have an idea for an improv
 
 PRs are welcome too, but for anything beyond a small fix it's worth opening an issue first so we can align on the approach before you spend time on it.
 
+## Other useful skills
+
+This bundle isn't the only one worth installing. [`mattpocock/skills`](https://github.com/mattpocock/skills) has a great companion set — examples:
+
+- **`grill-me`** — interview-style stress test that drills into a plan or design until every branch of the decision tree is resolved.
+- **`improve-codebase-architecture`** — guided pass for spotting and improving structural problems across a codebase.
+
+See the full list at [github.com/mattpocock/skills](https://github.com/mattpocock/skills).
+
 ## Acknowledgements
 
 Thanks to [@vavengh](https://github.com/vavengh) — the `/onboarding` skill was his idea, and he's contributed feedback that has helped improve several of the others.
+
+The visual review surface (`visual.html`) is inspired by [BuilderIO/skills](https://github.com/BuilderIO/skills)' `/visual-plan` — reimplemented here as a dependency-free static block library so plans render offline with no toolchain.

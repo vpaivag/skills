@@ -1,6 +1,6 @@
 ---
 name: setup
-description: Configure where plan suites live and whether the plans directory is gitignored. Writes `.claude/plans-config.json` with `plansDir` (default `.claude/plans`) and `gitignore` (default `true`) keys. Existing planning skills (`/intake`, `/deep-plan`, `/simple-plan`, `/plan-tracker`, `/execute-plan`, `/review-plan`) read this config to resolve the plans directory, falling back to `.claude/plans` when the config is absent. Use when the user invokes `/setup`, asks to "configure the plans directory", "change where plans live", "set up the plans skill config", or wants to opt in/out of gitignoring the plans directory.
+description: Configure where plan suites live and whether the plans directory is gitignored. Writes `.claude/plans-config.json` with `plansDir` (default `.claude/plans`) and `gitignore` (default `true`) keys. The planning skills (`/plan`, `/execute-plan`, `/execute-qa`) read this config to resolve the plans directory, falling back to `.claude/plans` when the config is absent. Use when the user invokes `/setup`, asks to "configure the plans directory", "change where plans live", "set up the plans skill config", or wants to opt in/out of gitignoring the plans directory.
 ---
 
 # /setup
