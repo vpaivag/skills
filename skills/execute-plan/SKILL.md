@@ -1,105 +1,60 @@
 ---
 name: execute-plan
-description: Execute a chunk file produced by /deep-plan. Reads the specified chunk, validates suite dependencies via the suite index, confirms files and order with the user, implements in sequence, verifies each acceptance criterion, and prompts for the final status update. Use when the user invokes /execute-plan <path>.
+description: Execute a plan.md produced by /plan. Reads the plan, confirms with the user, implements the phases in order, verifies each mechanical acceptance criterion (AC-n), and ends with the /execute-qa handoff. Run it in a fresh session with `claude --model sonnet "/execute-plan <path>"`. Use when the user invokes /execute-plan <path>.
 ---
 
 # /execute-plan
 
-Implement the chunk at the path provided by the user. Every plan produced by `/deep-plan` is a **suite** — a directory containing `index.md` and one or more chunk files. Even a single-chunk plan is a suite (the chunk lives at `<suite-dir>/plan.md`).
+Implement the plan at the path provided by the user. Every suite produced by `/plan` contains exactly one `plan.md` — there are no chunks, no index, and no status files.
 
 ## Usage
 
-`/execute-plan <path-to-chunk-file>`
+`/execute-plan <suite-dir>` or `/execute-plan <suite-dir>/plan.md`
 
-Examples (paths shown use the default plans directory; substitute the configured `plansDir` if different):
-- Single-chunk suite: `/execute-plan .claude/plans/2026-04-30-153022-add-rate-limiter/plan.md`
-- One chunk in a multi-chunk suite: `/execute-plan .claude/plans/2026-04-30-153022-mqtt-sync/listener.md`
-
-If the user passes the suite directory or `index.md`, ask which chunk they want to run.
-
-## Plans directory
-
-Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` if present and use its `plansDir`; otherwise default to `.claude/plans`. If the config file is missing or malformed, silently fall back to the default. The user-supplied chunk path is authoritative — this resolution only matters when this skill needs to interpret or print paths that aren't given by the user.
+If given the suite dir, the plan is `plan.md` inside it. This skill is designed to run in a fresh session on Sonnet — `/plan` prints the exact command (`claude --model sonnet "/execute-plan …"`); planning quality was already paid for upstream, execution follows the contract.
 
 ## Asking questions
 
-This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode — every call site below that says "call `AskUserQuestion`" follows this fallback rule.
+This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode.
 
 ## Phases
 
 ### Phase 1 — Read
 
-Read the chunk file as your **first action**. Do not explore or implement before reading it. If the path is missing, the file doesn't exist, or the file is malformed, stop and tell the user.
+Read `plan.md` as your **first action**. Do not explore or implement before reading it. If the path is missing, the file doesn't exist, or the file is malformed, stop and tell the user.
 
-Required sections in every chunk file:
-- `## Context`
-- `## Approach`
-- `## Files Changed`
-- `## Implementation Steps`
-- `## Risks & Edge Cases`
-- `## Acceptance Criteria`
+Required in every plan file (per `skills/plan/PLAN-FORMAT.md`):
 
-Required frontmatter (a block of `> **Field:** value` lines near the top):
-- `> **Status:**`
-- `> **Depends on:**`
-- `> **Part of suite:**`
+- YAML frontmatter with `artifact: plan`, `title`, `path`, `context`, `created`
+- `## Context`, `## Approach`, `## Files changed`, `## Phases`, `## Risks & edge cases`, `## Acceptance criteria`
 
-If any required section or frontmatter line is missing, stop and tell the user the chunk is malformed.
+If any required section or frontmatter key is missing, stop and tell the user the plan is malformed.
 
-Also read `CLAUDE.md` at the project root for project conventions.
-
-### Phase 1.5 — Suite dependency check
-
-Every chunk belongs to a suite, including single-chunk suites. Always run this phase.
-
-1. Locate the suite index using the `> **Part of suite:**` line. If unset, fall back to `index.md` in the same directory as the chunk.
-2. Read the index file.
-3. Find this chunk's entry in the index.
-4. Check the chunk's current `Status:` field in the index:
-   - If `done`: stop. Tell the user this chunk is already marked done. Ask via plain text whether they want to re-run it (which requires manually editing the index back to `pending` first).
-   - If `in-progress`: warn the user that the chunk is already in progress (possibly from a previous failed run). Ask via `AskUserQuestion`: "Continue (resume / re-run), or stop?" with options "Continue", "Stop". If continue, proceed.
-   - If `blocked`: stop. Tell the user the chunk is marked blocked and needs human resolution before it can run.
-   - If `pending`: proceed.
-5. Check this chunk's `Depends on:` list. For each dependency, look up its status in the index.
-   - If any dependency is not `done`, stop and print:
-     ```
-     🚫 Cannot execute <chunk-name>: depends on chunks that are not done yet.
-        - <dep-name>: <status>
-        - <dep-name>: <status>
-
-     Run those chunks first, or use /plan-tracker to see suite status.
-     ```
-   - End your turn. Do not proceed to implementation.
-6. If all dependencies are `done` (or the chunk has no dependencies), mark this chunk's status as `in-progress` in **both** the index file and the chunk file's frontmatter. This is the only automatic status update — it does not claim correctness, only that work has started.
-
-For single-chunk suites this phase is trivially satisfied (`Depends on:` is `(none)`), but the status update from `pending` → `in-progress` still happens.
+Also read `CLAUDE.md` at the project root for project conventions. Do **not** read `qa-plan.md` — behavioral verification belongs to a separate, unbiased session.
 
 ### Phase 2 — Confirm
 
 Print:
 
 ```
-📄 Chunk loaded: <filename>
-   Suite: <suite-name>
-   Status: in-progress (was pending; updated on run start)
-   Approach: <one-line from chunk>
-
-   Files to change (in order):
-   1. <path> — <intent>
-   2. ...
-
-   Acceptance criteria: <count>
+Plan loaded: <path>
+  Approach: <one-line from plan>
+  Phases: <count> — <names>
+  Files to change: <count>
+  Acceptance criteria: <count>
 ```
 
 Then ask in plain text: "Plan looks current and correct? Reply 'go' to proceed, or describe what's stale or wrong."
 
-Stop and wait. Do not proceed to Phase 3 until the user explicitly approves.
+Stop and wait. Do not proceed until the user explicitly approves.
 
-If the user reports that the plan is stale (e.g. "the file structure has changed since this was written"), stop. Tell the user the plan should be re-generated with `/deep-plan`. Do not patch a stale plan in execution mode. Revert the chunk's status from `in-progress` back to `pending` in both the index and the chunk file before stopping.
+If the user reports that the plan is stale (e.g. "the file structure has changed since this was written"), stop. Tell the user the plan should be revised with `/plan` — do not patch a stale plan in execution mode.
 
 ### Phase 3 — Implement
 
-Implement the steps **in the order specified by the chunk**. Do not reorder, skip, or merge steps without explicit user approval.
+Implement the plan's phases **in order**, and within each phase the steps in order. Do not reorder, skip, or merge without explicit user approval.
+
+At each phase boundary, print a one-line checkpoint (`Phase 1 — <name>: done, builds clean`) and continue — phases are pacing, not stopping points, unless a step failed.
 
 For each step:
 1. Make the change.
@@ -108,65 +63,46 @@ For each step:
 
 If a step is impossible or wrong-as-specified (the plan calls for a file that doesn't exist, specifies an interface that conflicts with reality, etc.), stop and ask the user. Do not silently work around plan specifications.
 
-The chunk provides interfaces, contracts, and intent — not implementation bodies. You are responsible for designing implementations that satisfy the contracts. Use the project's existing patterns (from `CLAUDE.md` and the codebase) as a guide.
+The plan provides interfaces, contracts, and intent — not implementation bodies. You are responsible for designing implementations that satisfy the contracts. Use the project's existing patterns (from `CLAUDE.md` and the codebase) as a guide.
 
 ### Phase 4 — Verify
 
-After all steps are complete, walk through the acceptance criteria checklist from the chunk. For each criterion:
-- Verify it (run the relevant test, check the relevant behavior)
+After all phases are complete, walk through the `AC-n` checklist from the plan. For each criterion:
+- Verify it (run the relevant check, observe the relevant behavior)
 - Mark ✅ or ❌
 - For ❌, briefly state why it can't be satisfied as-specified
 
-### Phase 5 — Report
+These are the plan's **mechanical** criteria only. Do not attempt behavioral verification here — that is `/execute-qa`'s job, and doing it in this session would mean grading your own homework.
 
-Print a final report:
+### Phase 5 — Report & handoff
+
+Print:
 
 ```
 Implementation report
 
 Acceptance criteria:
-  ✅ <criterion 1>
-  ✅ <criterion 2>
-  ❌ <criterion 3> — <reason>
+  AC-1 ✅ <criterion>
+  AC-2 ❌ <criterion> — <reason>
 
 Files changed:
   - <path>
 
 Notes:
   <any deviations from the plan, with reasoning>
+
+Next — behavioral QA, in a fresh session (this session is biased by its own implementation):
+  claude --model sonnet "/execute-qa <suite-dir>"
 ```
 
-If any criteria are ❌, do not claim the work is complete.
-
-### Phase 6 — Status prompt
-
-Always prompt the user for the final status — never auto-update from `in-progress` to `done`.
-
-Call `AskUserQuestion`:
-- **Question**: "How should this chunk be marked?"
-- **Options** (single-select):
-  1. "Mark done"
-  2. "Mark blocked"
-  3. "Leave as in-progress"
-  4. "Discard run (revert to pending)"
-
-Update the chunk's status in **both** the suite index file and the chunk file's frontmatter:
-
-- "Mark done" → set status to `done` in both files. Print: "✅ Chunk <name> marked done in suite index."
-- "Mark blocked" → set status to `blocked` in both files. Print: "⚠️ Chunk <name> marked blocked. Other chunks depending on this one cannot run until resolved."
-- "Leave as in-progress" → no change (already `in-progress`). Print: "ℹ️ Status left as in-progress."
-- "Discard run" → set status back to `pending` in both files. Print: "↩️ Status reverted to pending. (Code changes were NOT reverted — use git to undo if needed.)"
-
-End your turn after printing the acknowledgment.
+If any criteria are ❌, do not claim the work is complete. Do not commit — leave that to the user. End your turn.
 
 ## Constraints
 
-- Read the chunk first, before any other action.
-- Always check suite dependencies — even for single-chunk suites (the status transition still applies).
-- Refuse to run if dependencies aren't done.
-- Implement steps in the order specified.
+- Read the plan first, before any other action.
+- Never read `qa-plan.md` or run behavioral QA in this session.
+- Implement phases and steps in the order specified.
 - Don't deviate from the plan silently — ask the user when reality and the plan diverge.
 - Don't claim completion when acceptance criteria are not met.
-- Never auto-mark a chunk as `done`. Always prompt the user.
-- The only automatic status update is `pending` → `in-progress` at run start.
-- Status must always be kept in sync between the index and the chunk file frontmatter.
+- Do not update `plan.md` — it is a planning artifact, not a tracker; use git to see what changed.
+- Do not commit.

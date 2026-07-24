@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- visual-planner: replace the title with "Plan: <task title>" -->
+<title>Plan: TITLE</title>
+<link rel="stylesheet" href="./blocks.css">
+</head>
+<body>
+<main>
+  <!-- visual-planner: replace everything between CONTENT-START and CONTENT-END.
+       Vocabulary: see BLOCKS.md in the plugin's assets/visual/.
+       Wrap every top-level section in <review-section id title>.
+       Do not edit anything outside the content region. -->
+  <!-- CONTENT-START -->
+  <h1>Plan: TITLE</h1>
+  <p class="subtitle">SUBTITLE</p>
+
+  <review-section id="approach" title="Approach">
+    <p>…</p>
+  </review-section>
+  <!-- CONTENT-END -->
+</main>
+<!-- visual-planner: ONLY when the page contains a <pre class="mermaid"> block, insert here a
+     script tag pointing at the PLUGIN's copy (absolute path), e.g.
+     <script src="file:///…/plugin-root/assets/visual/mermaid.min.js"></script>
+     Never copy mermaid.min.js into the suite dir. -->
+<script src="./blocks.js"></script>
+</body>
+</html>
