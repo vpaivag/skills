@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="logo.png" alt="BBQ — blueprint · build · qa" width="280">
-</p>
-
 # vpaivag/skills
 
 Personal collection of agent skills covering planning, repo setup, and onboarding workflows.
@@ -124,6 +120,10 @@ Or use a local clone instead of GitHub:
 ## Skills
 
 ### Planning
+
+<p align="center">
+  <img src="logo.png" alt="BBQ — blueprint · build · qa" width="240">
+</p>
 
 #### blueprint
 
