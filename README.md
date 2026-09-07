@@ -39,6 +39,7 @@ flowchart TD
     - [blueprint](#blueprint)
     - [build](#build)
     - [qa](#qa)
+    - [scrap](#scrap)
   - [Repo setup](#repo-setup)
     - [setup](#setup)
     - [claude-md-refactor](#claude-md-refactor)
@@ -161,6 +162,14 @@ Executes the suite's single `plan.md` in a fresh session: read the plan first, c
 Verifies behavioral intent in a **plan-blind** session: it reads only `qa-plan.md` (and `context.md`) — never `plan.md`, `visual.html`, or the diff — and checks each criterion against the running code from the outside, the way a user would. If the repo has a test setup, criteria become real test files following the repo's conventions, annotated with their `B-n`/`R-n` IDs; if not, criteria are verified live and reported as a manual checklist. Failures are reported as expected-vs-observed divergence, never "fixed" here and never diagnosed by peeking at the implementation.
 
 → [`skills/qa`](./skills/qa)
+
+#### scrap
+
+**Trigger:** `/scrap [suite-dir-or-slug]`, or asking to scrap a plan, throw it out and start over, or delete a plan suite.
+
+Deletes one plan suite and clears the way to start from zero. Lists the suites under the configured plans directory with a one-line status each (`context only`, `plan drafted, not reviewed`, `approved`/`flagged`, …), lets you pick or pass a path/slug directly, then requires an explicit confirmation naming the exact directory before running `rm -rf` on it — nothing else on disk is touched, and no other suite is ever affected. Never auto-starts a new `/blueprint`; it only offers the command to run when you're ready.
+
+→ [`skills/scrap`](./skills/scrap)
 
 ### Repo setup
 
