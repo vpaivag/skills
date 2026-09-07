@@ -1,7 +1,7 @@
 {
   "name": "skills",
   "description": "The BBQ flow (Blueprint \u2192 Build \u2192 QA) \u2014 a planning pipeline with blind QA and a visual review surface, plus adversarial review and a CLAUDE.md refactor utility.",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "author": {
     "name": "vpaivag",
     "email": "vpaivagross@gmail.com"
@@ -22,6 +22,7 @@
     "./skills/qa",
     "./skills/onboarding",
     "./skills/blueprint",
+    "./skills/scrap",
     "./skills/pr-reviewer",
     "./skills/setup"
   ]
