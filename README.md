@@ -39,6 +39,8 @@ flowchart TD
     - [blueprint](#blueprint)
     - [build](#build)
     - [qa](#qa)
+  - [Product](#product)
+    - [issue](#issue)
   - [Repo setup](#repo-setup)
     - [setup](#setup)
     - [claude-md-refactor](#claude-md-refactor)
@@ -162,6 +164,23 @@ Verifies behavioral intent in a **plan-blind** session: it reads only `qa-plan.m
 
 → [`skills/qa`](./skills/qa)
 
+### Product
+
+#### issue
+
+**Trigger:** `/issue <rough input>`, or asking to write, create, or file a Linear issue or ticket, turn a bug report or feature idea into a ticket, or break a feature into sub-issues.
+
+Drafts Linear issues that a dev or coding agent can pick up cold — the issue is the whole brief, no conversation behind it. One standard format for every type (`ISSUE-FORMAT.md`): a verb-first title, then **Context → Acceptance → Out of scope → Pointers → References**, with only the section content changing between bugs, features, parents, and sub-issues.
+
+- **Language per issue** — asked once in a single batch with the team and any gaps; headings stay in English so every issue shares the same skeleton.
+- **Shapes the work** — a bug or single-layer change is one issue; a feature spanning layers becomes a parent with one sub-issue per layer, the contract layer **blocking** its consumers. Relations go in Linear's fields, not prose.
+- **Checks before drafting** — searches Linear for duplicates and blockers, and the current repo for real file pointers.
+- **Writes only after approval** — shows a full preview, then creates through the Linear MCP. Never sets estimates.
+
+Needs the Linear MCP connected.
+
+→ [`skills/issue`](./skills/issue)
+
 ### Repo setup
 
 #### setup
@@ -251,6 +270,7 @@ skills/
   qa/SKILL.md
   onboarding/SKILL.md
   blueprint/SKILL.md # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md
+  issue/SKILL.md     # + ISSUE-FORMAT.md
   pr-reviewer/SKILL.md
   setup/SKILL.md
 ```
