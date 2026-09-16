@@ -11,6 +11,21 @@ Turn rough input into Linear issues that stand alone: a dev or an agent with no 
 
 Ask via `AskUserQuestion`, recommended option first. If it is unavailable, print the questions as a numbered list with options and wait for the reply.
 
+## Linear vocabulary
+
+Speak Linear — in chat, in questions, and in everything written to Linear. When a Jira or Scrum term comes to mind, use its Linear counterpart:
+
+| Reaching for | Say |
+|---|---|
+| Epic | **Project** (multi-week, milestones) or **parent issue** (one feature across a few layers) |
+| Story, user story, ticket | **Issue** — a plain task title, never "As a user I want…" |
+| Subtask | **Sub-issue** |
+| Sprint | **Cycle** |
+| Story points | **Estimate** |
+| Dependency | **Blocks** / **blocked by** relation |
+| Theme | **Initiative** |
+| Grooming, refinement | **Triage** |
+
 ## Steps
 
 ### 1. Read the input
@@ -38,24 +53,26 @@ Done when duplicates are ruled out or confirmed, and each Pointer is a path you 
 
 ### 4. Shape the work
 
-Pick one shape and state it with its reason:
+The input may hold more than one effort — a short-term fix and a longer-term redesign, say. Shape each effort on its own, and state every shape by its Linear name with its reason:
 
 - **Single issue** — a bug, or work confined to one layer that fits one PR.
-- **Parent + sub-issues** — a feature spanning two or more layers or owners. One sub-issue per layer; the layer that defines a contract (usually api) **blocks** the layers that consume it. Propose this shape and let the user confirm or collapse it into one issue.
-- **Project** — multi-week work with milestones. Say so and ask whether to continue with a parent + sub-issues for its first slice.
+- **Parent issue + sub-issues** — a feature spanning two or more layers or owners. One sub-issue per layer; the layer that defines a contract (usually api) **blocks** the layers that consume it. Propose this shape and let the user confirm or collapse it into one issue.
+- **Project** — multi-week work with milestones. Say so and ask whether to continue with a parent issue + sub-issues for its first slice.
+
+Link separate efforts with a **related** relation, or **blocks** when one must land before the other.
 
 ### 5. Draft
 
 Read `ISSUE-FORMAT.md` now — not earlier, never from memory. Draft every issue in the chosen shape, then check each one against the format's **Required** list and its rules.
 
-Show the preview for each issue: title, team, labels, parent, blocked-by/blocks, and the full description. Revise until the user approves.
+Show the preview for each issue: title, team, labels, parent, relations, and the full description. Revise until the user approves.
 
 ### 6. Create
 
 After explicit approval, create through the Linear MCP `save_issue`:
 
 - Create the parent first, then each sub-issue with `parentId`.
-- Set `blockedBy` / `blocks` for the recorded relations, including between sub-issues.
+- Set `blockedBy` / `blocks` / `relatedTo` for the recorded relations, including between sub-issues and between separate efforts.
 - Apply labels by matching the type and layers against `list_issue_labels` for the team; use only labels that already exist.
 - Attach reference URLs through `links`.
 - Leave estimate, assignee, priority, cycle, and status at their defaults unless the user set them in this conversation.
