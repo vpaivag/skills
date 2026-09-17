@@ -173,7 +173,8 @@ Verifies behavioral intent in a **plan-blind** session: it reads only `qa-plan.m
 Drafts Linear issues that a dev or coding agent can pick up cold — the issue is the whole brief, no conversation behind it. One standard format for every type (`ISSUE-FORMAT.md`): a verb-first title, then **Context → Acceptance → Out of scope → Pointers → References**, with only the section content changing between bugs, features, parents, and sub-issues.
 
 - **Language per issue** — asked once in a single batch with the team and any gaps; headings stay in English so every issue shares the same skeleton.
-- **Shapes the work** — a bug or single-layer change is one issue; a feature spanning layers becomes a parent with one sub-issue per layer, the contract layer **blocking** its consumers. Relations go in Linear's fields, not prose.
+- **Shapes the work** — a bug or single-layer change is one issue; a feature spanning layers becomes a parent with one sub-issue per layer, the contract layer **blocking** its consumers. Relations go in Linear's fields, not prose. Project-sized work is flagged, not specced — you create the project, then `/issue` files issues into it.
+- **Speaks Linear** — issue, sub-issue, project, cycle, relation; never Jira/Scrum terms.
 - **Checks before drafting** — searches Linear for duplicates and blockers, and the current repo for real file pointers.
 - **Writes only after approval** — shows a full preview, then creates through the Linear MCP. Never sets estimates.
 
