@@ -1,6 +1,6 @@
 # vpaivag/skills
 
-Personal collection of agent skills covering planning, repo setup, and onboarding workflows.
+Personal collection of agent skills covering planning, code review, repo setup, and onboarding workflows.
 
 Each skill is a self-contained `SKILL.md` under `skills/<name>/` that loads on demand when its trigger fires. The planning skills compose into the **BBQ flow** — **B**lueprint → **B**uild → **Q**A:
 
@@ -46,8 +46,8 @@ flowchart TD
     - [claude-md-refactor](#claude-md-refactor)
   - [Onboarding](#onboarding)
     - [onboarding](#onboarding-1)
-  - [Standalone](#standalone)
-    - [pr-reviewer](#pr-reviewer)
+  - [Review](#review)
+    - [intent-review](#intent-review)
     - [adversarial-review](#adversarial-review)
 - [Agents](#agents)
 - [Layout](#layout)
@@ -215,19 +215,21 @@ Ramps a newcomer up on an unfamiliar codebase in three phases: a `CLAUDE.md`-qua
 
 → [`skills/onboarding`](./skills/onboarding)
 
-### Standalone
+### Review
 
-#### pr-reviewer
+A PR review is two questions, asked by two skills with opposite blindness: `/intent-review` — *is it what was asked?* (sees the request, never the author's story) — and `/adversarial-review` — *is it broken?* (sees the diff, never the intent). Both run in a fresh session.
 
-**Trigger:** asking to review a PR, look at a pull request, do a code review, check a branch before merge, or "what do you think of #123 / this branch?".
+#### intent-review
 
-Performs a thorough, expert-level pull request review and returns a structured report with issues categorized by severity, including code snippets. Reads surrounding code (not just the diff) before flagging anything, and refuses to fabricate issues.
+**Trigger:** `/intent-review <diff> [request]`, or asking whether a PR or branch does what the issue asked, to check a diff against the request or its acceptance criteria, or "did this miss anything?".
 
-Hard rules baked in:
-- **Never posts to the PR** unless the user explicitly says so after seeing the report.
-- **Never modifies the PR's code** — the reviewer reviews, the author authors.
+Checks that a diff delivers **what was requested** — every ask, every constraint, nothing silently dropped or reinterpreted. The request is a Linear issue, a `context.md`, or the prompt pasted in; with none given it follows an issue linked from the PR, or asks. The PR description and commit messages are the **author's story** — they narrate what the author believes they built, so they're never used as the request and never reach a subagent.
 
-→ [`skills/pr-reviewer`](./skills/pr-reviewer)
+- **Asks first, confirmed by you** — a subagent that sees only the request breaks it into numbered asks (`I-n`), constraints (`C-n`), and ambiguities; you approve the list before anything is traced.
+- **Traced with evidence** — 2+ independent tracers give every ask a verdict (**done / partial / missing / drifted**) and every constraint **respected / violated**, each with `file:line`, then sweep for unrequested changes (**supporting** vs **unrelated**).
+- **Verified, then reported** — every gap and every tracer disagreement is re-checked against the real code. Report only: no fixes, no PR comments.
+
+→ [`skills/intent-review`](./skills/intent-review)
 
 #### adversarial-review
 
@@ -238,7 +240,7 @@ Adversarial code review built on **split context**, faithful to the [Bun-in-Rust
 - **Reviewers see the diff, not the story** — leaking intent is what launders a bug into "looks fine".
 - **Report by default** — fixes are applied only if you ask after seeing the findings.
 
-Narrower than `pr-reviewer` (no intent-gathering, no GitHub posting); the natural last step of the planning pipeline, and the lightweight local counterpart to `/code-review ultra`.
+The intent-blind counterpart to `intent-review`; the natural last step of the planning pipeline, and the lightweight local counterpart to `/code-review ultra`.
 
 → [`skills/adversarial-review`](./skills/adversarial-review)
 
@@ -271,8 +273,8 @@ skills/
   qa/SKILL.md
   onboarding/SKILL.md
   blueprint/SKILL.md # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md
+  intent-review/SKILL.md
   issue/SKILL.md     # + ISSUE-FORMAT.md
-  pr-reviewer/SKILL.md
   setup/SKILL.md
 ```
 

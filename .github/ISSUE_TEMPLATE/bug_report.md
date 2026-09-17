@@ -7,7 +7,7 @@ labels: bug
 
 ## Skill
 
-Which skill is affected? (e.g. `deep-plan`, `build`, `pr-reviewer`, ...)
+Which skill is affected? (e.g. `blueprint`, `build`, `intent-review`, ...)
 
 ## What you expected
 

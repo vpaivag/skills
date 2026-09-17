@@ -101,5 +101,5 @@ Do not fix, commit, or push before the user asks.
 
 ## Notes
 
-- This skill reviews a **diff**, and is deliberately narrow: adversarial bug-hunting via split context. It is not a full PR review — no intent-gathering, no severity taxonomy, no posting to GitHub. For that, use `/pr-reviewer`. For a broad multi-agent pass with cloud verification, `/code-review ultra` already exists; this skill is the lightweight, local, blog-faithful version you can run inline the moment code is written.
+- This skill reviews a **diff**, and is deliberately narrow: adversarial bug-hunting via split context. It never checks the diff against what was requested — that is `/intent-review`, its intent-aware counterpart, and the two together make a PR review. For a broad multi-agent pass with cloud verification, `/code-review ultra` already exists; this skill is the lightweight, local, blog-faithful version you can run inline the moment code is written.
 - The most common way to weaken it is leaking context to the reviewers. If you catch yourself "helpfully" telling a reviewer what the code is meant to do, stop — that framing is exactly what hides the bug.

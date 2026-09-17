@@ -9,7 +9,7 @@
     {
       "name": "skills",
       "source": "./",
-      "description": "The BBQ flow (Blueprint \u2192 Build \u2192 QA) \u2014 a planning pipeline with blind QA and a visual review surface, plus adversarial review and a CLAUDE.md refactor utility.",
+      "description": "The BBQ flow (Blueprint \u2192 Build \u2192 QA) \u2014 a planning pipeline with blind QA and a visual review surface, plus Linear issue drafting, adversarial and intent review, and a CLAUDE.md refactor utility.",
       "author": {
         "name": "vpaivag",
         "email": "vpaivagross@gmail.com"
