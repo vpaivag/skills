@@ -41,6 +41,7 @@ flowchart TD
     - [qa](#qa)
   - [Product](#product)
     - [issue](#issue)
+    - [project](#project)
   - [Repo setup](#repo-setup)
     - [setup](#setup)
     - [claude-md-refactor](#claude-md-refactor)
@@ -173,7 +174,7 @@ Verifies behavioral intent in a **plan-blind** session: it reads only `qa-plan.m
 Drafts Linear issues that a dev or coding agent can pick up cold — the issue is the whole brief, no conversation behind it. One standard format for every type (`ISSUE-FORMAT.md`): a verb-first title, then **Context → Acceptance → Out of scope → Pointers → References**, with only the section content changing between bugs, features, parents, and sub-issues.
 
 - **Language per issue** — asked once in a single batch with the team and any gaps; headings stay in English so every issue shares the same skeleton.
-- **Shapes the work** — a bug or single-layer change is one issue; a feature spanning layers becomes a parent with one sub-issue per layer, the contract layer **blocking** its consumers. Relations go in Linear's fields, not prose. Project-sized work is flagged, not specced — you create the project, then `/issue` files issues into it.
+- **Shapes the work** — one feature is one issue, however long it takes: a bug or single-layer change is one issue; a feature needing multiple steps, layers, or repos becomes a parent with one sub-issue per layer, the contract layer **blocking** its consumers. Relations go in Linear's fields, not prose. Two or more features toward one goal are project-sized — flagged and sent to `/project`.
 - **Speaks Linear** — issue, sub-issue, project, cycle, relation; never Jira/Scrum terms.
 - **Checks before drafting** — searches Linear for duplicates and blockers, and the current repo for real file pointers.
 - **Writes only after approval** — shows a full preview, then creates through the Linear MCP. Never sets estimates.
@@ -181,6 +182,21 @@ Drafts Linear issues that a dev or coding agent can pick up cold — the issue i
 Needs the Linear MCP connected.
 
 → [`skills/issue`](./skills/issue)
+
+#### project
+
+**Trigger:** `/project <rough input>`, or asking to create or spec a Linear project, turn a set of related features into a project, or when `/issue` flags work as project-sized.
+
+Drafts a Linear project the team can plan against — the project says what and why, the issues say how. One standard format (`PROJECT-FORMAT.md`): a noun-phrase name and one-line summary, then **Problem → Goal (with a success signal) → Scope → Out of scope → Risks → References**.
+
+- **Gated by features, not duration** — a project holds two or more features toward one goal; a single feature, however big, is sent back to `/issue`.
+- **Scope lists features** — each one becomes an `/issue` run. Milestones are optional, used only when features ship in stages, and always name a shippable outcome, never a layer or phase.
+- **Checks before drafting** — searches Linear for overlapping projects, a matching initiative, and open issues that already cover a feature.
+- **Writes only after approval** — shows a full preview, creates the project and milestones through the Linear MCP (never from a Linear template), then invokes `/issue` for every feature.
+
+Needs the Linear MCP connected.
+
+→ [`skills/project`](./skills/project)
 
 ### Repo setup
 

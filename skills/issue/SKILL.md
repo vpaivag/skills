@@ -17,7 +17,7 @@ Speak Linear — in chat, in questions, and in everything written to Linear. Whe
 
 | Reaching for | Say |
 |---|---|
-| Epic | **Project** (multi-week, milestones) or **parent issue** (one feature across a few layers) |
+| Epic | **Project** (several features toward one goal) or **parent issue** (one feature, multi-step or multi-repo) |
 | Story, user story, ticket | **Issue** — a plain task title, never "As a user I want…" |
 | Subtask | **Sub-issue** |
 | Sprint | **Cycle** |
@@ -53,11 +53,11 @@ Done when duplicates are ruled out or confirmed, and each Pointer is a path you 
 
 ### 4. Shape the work
 
-The input may hold more than one effort — a short-term fix and a longer-term redesign, say. Shape each effort on its own, and state every shape by its Linear name with its reason:
+The input may hold more than one effort — a short-term fix and a longer-term redesign, say. Shape each effort on its own, and state every shape by its Linear name with its reason. The line is drawn by how many features, never by how long the work takes — one feature is one issue:
 
-- **Single issue** — a bug, or work confined to one layer that fits one PR.
-- **Parent issue + sub-issues** — a feature spanning two or more layers or owners. One sub-issue per layer; the layer that defines a contract (usually api) **blocks** the layers that consume it. Propose this shape and let the user confirm or collapse it into one issue.
-- **Project** — multi-week work with milestones. A project spec is the lead's call, not this skill's: say the effort is project-sized, recommend the user create the project, and stop shaping that effort. Once the project exists, `/issue` files its first slice into it.
+- **Single issue** — a bug, or one feature confined to one layer that fits one PR.
+- **Parent issue + sub-issues** — one feature that needs multiple steps, layers, or repos, however long it takes. One sub-issue per layer; the layer that defines a contract (usually api) **blocks** the layers that consume it. Propose this shape and let the user confirm or collapse it into one issue.
+- **Project** — two or more features toward one goal. Projects are `/project`'s job: say the effort is project-sized, recommend `/project`, and stop shaping that effort.
 
 Link separate efforts with a **related** relation, or **blocks** when one must land before the other.
 
@@ -71,7 +71,7 @@ Show the preview for each issue: title, team, project, labels, parent, relations
 
 After explicit approval, create through the Linear MCP `save_issue`:
 
-- Set `project` on every issue when the input names an existing Linear project.
+- Set `project` on every issue when the input names an existing Linear project, and `milestone` when it names one.
 - Create the parent first, then each sub-issue with `parentId`.
 - Set `blockedBy` / `blocks` / `relatedTo` for the recorded relations, including between sub-issues and between separate efforts.
 - Apply labels by matching the type and layers against `list_issue_labels` for the team; use only labels that already exist.
