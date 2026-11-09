@@ -18,6 +18,7 @@ Speak Linear — in chat, in questions, and in everything written to Linear. Whe
 | Reaching for | Say |
 |---|---|
 | Epic | **Project** (several features toward one goal) or **parent issue** (one feature, multi-step or multi-repo) |
+| Roadmap phase, release stage | **Milestone** — a shippable stage inside a project |
 | Story, user story, ticket | **Issue** — a plain task title, never "As a user I want…" |
 | Subtask | **Sub-issue** |
 | Sprint | **Cycle** |

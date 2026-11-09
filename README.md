@@ -306,6 +306,7 @@ skills/
   intent-review/SKILL.md
   issue/SKILL.md     # + ISSUE-FORMAT.md
   pattern-review/SKILL.md
+  project/SKILL.md   # + PROJECT-FORMAT.md
   setup/SKILL.md
 ```
 

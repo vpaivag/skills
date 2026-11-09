@@ -13,7 +13,19 @@ Ask via `AskUserQuestion`, recommended option first. If it is unavailable, print
 
 ## Linear vocabulary
 
-Speak Linear — in chat, in questions, and in everything written to Linear. Project, milestone, initiative, lead, issue, parent issue — never epic, roadmap phase, story, or sprint.
+Speak Linear — in chat, in questions, and in everything written to Linear. When a Jira or Scrum term comes to mind, use its Linear counterpart:
+
+| Reaching for | Say |
+|---|---|
+| Epic | **Project** (several features toward one goal) or **parent issue** (one feature, multi-step or multi-repo) |
+| Roadmap phase, release stage | **Milestone** — a shippable stage inside a project |
+| Story, user story, ticket | **Issue** — a plain task title, never "As a user I want…" |
+| Subtask | **Sub-issue** |
+| Sprint | **Cycle** |
+| Story points | **Estimate** |
+| Dependency | **Blocks** / **blocked by** relation |
+| Theme | **Initiative** |
+| Grooming, refinement | **Triage** |
 
 ## Steps
 

@@ -19,6 +19,7 @@ Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on dema
 - **Preserve the user's voice in skill prose.** Don't rewrite phrasing into a different style — the wording in each `SKILL.md` is intentional.
 - **Static assets and vanilla client-side JS only.** `assets/visual/` may hold CSS, dependency-free browser JS, HTML templates, and the vendored `mermaid.min.js` (plugin-side only — never copied into suite dirs; opt-in per the rule in `assets/visual/BLOCKS.md`). No build step, no package managers, no runtime dependencies, no servers, no CI scaffolding.
 - **Split context is the pipeline's design principle.** `qa-author` sees only `context.md`; `plan-critic` sees one proposal; `/qa` never reads `plan.md`. Don't "improve" a skill or agent by giving a blind role more context — the blindness is the feature.
+- **Hand-offs follow context, not a fixed rule.** A skill invokes the next skill itself when the context should carry over (`/project` → `/issue` — the project's context is exactly what each issue needs). It prints the command for a fresh session when the context should not (`/blueprint` → `/build` / `/qa` — the executor and QA must not inherit why the plan is shaped the way it is).
 
 ## Layout
 
