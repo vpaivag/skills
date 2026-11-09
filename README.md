@@ -50,6 +50,7 @@ flowchart TD
   - [Review](#review)
     - [intent-review](#intent-review)
     - [adversarial-review](#adversarial-review)
+    - [pattern-review](#pattern-review)
 - [Agents](#agents)
 - [Layout](#layout)
 - [Contributing](#contributing)
@@ -233,7 +234,7 @@ Ramps a newcomer up on an unfamiliar codebase in three phases: a `CLAUDE.md`-qua
 
 ### Review
 
-A PR review is two questions, asked by two skills with opposite blindness: `/intent-review` — *is it what was asked?* (sees the request, never the author's story) — and `/adversarial-review` — *is it broken?* (sees the diff, never the intent). Both run in a fresh session.
+A PR review is three questions, each asked by a skill with its own blindness: `/intent-review` — *is it what was asked?* (sees the request, never the author's story) — `/adversarial-review` — *is it broken?* (sees the diff, never the intent) — and `/pattern-review` — *does it fit the repo?* (conventions are mined from existing code by agents that never see the diff). All run in a fresh session.
 
 #### intent-review
 
@@ -259,6 +260,19 @@ Adversarial code review built on **split context**, faithful to the [Bun-in-Rust
 The intent-blind counterpart to `intent-review`; the natural last step of the planning pipeline, and the lightweight local counterpart to `/code-review ultra`.
 
 → [`skills/adversarial-review`](./skills/adversarial-review)
+
+#### pattern-review
+
+**Trigger:** `/pattern-review [diff]`, or asking whether a PR or diff follows the repo's patterns or conventions, "is this how we do it here?", or to catch reinvented helpers.
+
+Checks that a diff **looks like the repo it lands in** — error handling, naming, placement, test shape, and existing helpers reused instead of rewritten. Not bugs, not fit to the request: only consistency with what the repo already does.
+
+- **Mined blind** — each changed unit is described without its code; miner subagents that never see the diff extract the repo's conventions for that kind of unit from the base ref (edited files count in their pre-change form, new files never), plus the helpers that already do its job.
+- **Family first** — a unit is judged against its nearest siblings before the repo as a whole, so a family that does things its own way isn't flagged for it.
+- **A pattern needs 2+ examples** — every convention cites at least two `file:line` examples (or a documented rule in `CLAUDE.md`; a one-member family counts as sibling precedent); where the repo already does it two ways, that's a split, not a finding.
+- **Compared, verified, reported** — 2+ comparers flag **deviations**, **reinvented helpers**, and deliberate **new patterns** (grouped as one finding, not one per site); every finding is re-checked against the real code. Report only.
+
+→ [`skills/pattern-review`](./skills/pattern-review)
 
 ## Agents
 
@@ -291,6 +305,7 @@ skills/
   blueprint/SKILL.md # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md
   intent-review/SKILL.md
   issue/SKILL.md     # + ISSUE-FORMAT.md
+  pattern-review/SKILL.md
   setup/SKILL.md
 ```
 
