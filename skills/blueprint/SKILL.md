@@ -63,7 +63,7 @@ Read `CLAUDE.md` (see Project conventions), then explore just enough to size the
 **Too small.** No signal fires and the change is direct — one obvious touchpoint, an outcome nobody would misread. Print:
 
 ```
-🚦 This task is too small or has a direct solution — we'd be overthinking it. <one-line reason>
+This task is too small or has a direct solution — we'd be overthinking it. <one-line reason>
 ```
 
 Then ask: implement it directly, or force the blueprint. Recommend implementing directly. Forcing is always available — the dev may know about something this sizing missed.
