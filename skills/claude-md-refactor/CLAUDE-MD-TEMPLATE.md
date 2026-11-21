@@ -37,3 +37,5 @@ Good: `**Deferred loading** — /docs/deferred-loading.md — how modules are la
 Bad: `See /docs/deferred-loading.md` (no topic, no trigger hint — Claude won't know when to open it)
 
 The "when to read it" hint is what makes progressive disclosure actually work. Without it, the doc may as well be inlined.
+
+For a doc holding rules new code must follow, make the trigger an instruction: `**Forms** — /docs/forms.md — building or editing a form? Read this first`. A session that skips the doc improvises its own pattern.

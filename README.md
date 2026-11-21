@@ -48,7 +48,7 @@ flowchart TD
   - [Review](#review)
     - [intent-review](#intent-review)
     - [adversarial-review](#adversarial-review)
-    - [pattern-review](#pattern-review)
+    - [quality-review](#quality-review)
 - [Agents](#agents)
 - [Layout](#layout)
 - [Contributing](#contributing)
@@ -220,6 +220,8 @@ Three modes:
 - **Bootstrap** a `CLAUDE.md` + `/docs` for a repo that has none.
 - **Confirm** a healthy `CLAUDE.md` doesn't need changes (avoids over-editing).
 
+Convention docs it writes (`docs/FORMS.md`, `docs/ROUTES.md`) are what `/quality-review` enforces, so they hold design rules only — "when a component is used in 2+ places, move it to `components/`", never code style — each backed by real examples, and you cut the list before anything is written.
+
 → [`skills/claude-md-refactor`](./skills/claude-md-refactor)
 
 ### Onboarding
@@ -234,7 +236,7 @@ Ramps a newcomer up on an unfamiliar codebase in three phases: a `CLAUDE.md`-qua
 
 ### Review
 
-A PR review is three questions, each asked by a skill with its own blindness: `/intent-review` — *is it what was asked?* (sees the request, never the author's story) — `/adversarial-review` — *is it broken?* (sees the diff, never the intent) — and `/pattern-review` — *does it fit the repo?* (conventions are mined from existing code by agents that never see the diff). All run in a fresh session.
+A PR review is three questions, each asked by a skill with its own blindness: `/intent-review` — *is it what was asked?* (sees the request, never the author's story) — `/adversarial-review` — *is it broken?* (sees the diff, never the intent) — and `/quality-review` — *is it well built for this repo?* (checked against the rules your docs write down, plus a design-smell baseline). All run in a fresh session.
 
 #### intent-review
 
@@ -261,18 +263,18 @@ The intent-blind counterpart to `intent-review`; the natural last step of the pl
 
 → [`skills/adversarial-review`](./skills/adversarial-review)
 
-#### pattern-review
+#### quality-review
 
-**Trigger:** `/pattern-review [diff]`, or asking whether a PR or diff follows the repo's patterns or conventions, "is this how we do it here?", or to catch reinvented helpers.
+**Trigger:** `/quality-review [diff]`, or asking whether a PR or diff follows the repo's patterns or conventions, "is this how we do it here?", for a quality or design review, or to catch reinvented helpers and design smells.
 
-Checks that a diff **looks like the repo it lands in** — error handling, naming, placement, test shape, and existing helpers reused instead of rewritten. Not bugs, not fit to the request: only consistency with what the repo already does.
+Checks that a diff **is well built for the repo it lands in** — it follows the conventions the repo has written down, reuses existing helpers instead of rewriting them, and doesn't introduce design smells. Not bugs, not fit to the request, not style.
 
-- **Mined blind** — each changed unit is described without its code; miner subagents that never see the diff extract the repo's conventions for that kind of unit from the base ref (edited files count in their pre-change form, new files never), plus the helpers that already do its job.
-- **Family first** — a unit is judged against its nearest siblings before the repo as a whole, so a family that does things its own way isn't flagged for it.
-- **A pattern needs 2+ examples** — every convention cites at least two `file:line` examples (or a documented rule in `CLAUDE.md`; a one-member family counts as sibling precedent); where the repo already does it two ways, that's a split, not a finding.
-- **Compared, verified, reported** — 2+ comparers flag **deviations**, **reinvented helpers**, and deliberate **new patterns** (grouped as one finding, not one per site); every finding is re-checked against the real code. Report only.
+- **Repo rules from your docs** — each changed unit is mapped to the convention doc `CLAUDE.md` links for it (a form → `docs/FORMS.md`) and checked against it and `CLAUDE.md`'s hard rules, read at the base ref. A rule nobody wrote down is not a convention — no mining, no guessing. Units with no doc are reported as uncovered.
+- **Duplication** — a repo search per unit for existing code that already does its job, plus logic repeated within the change.
+- **Design smells** — a baseline of Fowler smells (Feature Envy, Primitive Obsession, Shotgun Surgery…) as labelled judgement calls on the diff's own code, capped at 5; a doc that endorses what a smell flags wins.
+- **Two axes, verified, reported** — a repo-rules comparer and a smell comparer run in parallel, blind to the request; every finding is re-checked against the real code, and the two axes are reported separately, never reranked. Report only.
 
-→ [`skills/pattern-review`](./skills/pattern-review)
+→ [`skills/quality-review`](./skills/quality-review)
 
 ## Agents
 
@@ -303,7 +305,7 @@ skills/
   blueprint/SKILL.md # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md, GRILLING.md (vendored)
   intent-review/SKILL.md
   issue/SKILL.md     # + ISSUE-FORMAT.md
-  pattern-review/SKILL.md
+  quality-review/SKILL.md
   project/SKILL.md   # + PROJECT-FORMAT.md
   setup/SKILL.md
 ```
@@ -329,6 +331,8 @@ See the full list at [github.com/mattpocock/skills](https://github.com/mattpococ
 ## Acknowledgements
 
 Thanks to [@vavengh](https://github.com/vavengh) — the `/onboarding` skill was his idea, and he's contributed feedback that has helped improve several of the others.
+
+The design-smell baseline in `/quality-review` is adapted from [`mattpocock/skills`](https://github.com/mattpocock/skills)' `code-review` skill, itself drawn from Fowler's *Refactoring*.
 
 The visual review surface (`visual.html`) is inspired by [BuilderIO/skills](https://github.com/BuilderIO/skills)' `/visual-plan` — reimplemented here as a dependency-free static block library so plans render offline with no toolchain.
 
