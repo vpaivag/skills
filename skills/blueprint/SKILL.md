@@ -37,7 +37,7 @@ Before exploring, read `CLAUDE.md` at the project root if it exists. It contains
 - **Read-only on code.** Code access is `Read`, `Glob`, `Grep`, and read-only `Bash` (e.g. `git log`, `git diff --stat`, `ls`). The only writes are the suite directory contents and an optional `.gitignore` append. The single exception is the short-circuit's "implement directly" answer, which ends the blueprint before anything is written.
 - **The orchestrator owns the conversation.** Subagents cannot talk to the user; the interview, triage questions, and approval happen in this session. Subagents earn their isolation through parallelism (explore fan-out) or deliberate blindness (`gap-finder`, `qa-author`).
 - **The suite directory is the interface between agents.** Subagents read and write files in the suite dir; do not paste artifacts into prompts when a file path will do.
-- **Do not auto-invoke `/build`, `/qa`, or any other skill.** The handoff is the user's job — fresh sessions keep the executor's and QA's context clean.
+- **Do not auto-invoke `/build`, `/qa`, or any other skill.** The handoff is the user's job — fresh sessions keep the executor's and QA's context clean. The one exception is the `grilling` skill in Stage 3: its context should carry over, so it runs inside this session.
 
 ## Stages
 
@@ -81,8 +81,12 @@ Then ask: implement it directly, or force the blueprint. Recommend implementing 
 
 **Interview.** First decide whether the discussion already happened:
 
-- **The conversation already holds it** (the dev grilled the task before invoking `/blueprint`, or a design discussion precedes this turn): summarize the decisions and edge cases you are taking from it, and ask whether to skip the interview. Recommend skipping. Skipping still keeps Stage 4's gap review — the goldfish catch the discussion's blind spots too.
-- **Otherwise** — a fresh session, or only a one-line task or a product-level issue: read [GRILLING.md](./GRILLING.md) **now** and interview the dev by it. Its rounds and recommended answers replace this skill's question format for the interview. Facts go to explore subagents, never to the dev; decisions go to the dev.
+- **The conversation already holds it** (the dev grilled the task before invoking `/blueprint`, or a design discussion precedes this turn): summarize the decisions and edge cases you are taking from it, and ask whether to skip the interview. Recommend skipping. Skipping still keeps Stage 5's gap review — the goldfish catch the discussion's blind spots too.
+- **Otherwise** — a fresh session, or only a one-line task or a product-level issue: interview the dev with the grilling skill.
+  - **If a `grilling` skill is available** in this session (e.g. `mattpocock-skills:grilling`), invoke it through the Skill tool — the installed copy is the one the dev keeps up to date.
+  - **Otherwise**, read the vendored [GRILLING.md](./GRILLING.md) **now** and interview the dev by it.
+
+  Either way, its rounds and recommended answers replace this skill's question format for the interview. Facts go to explore subagents, never to the dev; decisions go to the dev. When the interview ends, continue with this skill — grilling settles the understanding, it does not act on it.
 
 The interview is done when you can state, without guessing:
 
