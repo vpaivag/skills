@@ -62,7 +62,7 @@ If unsure, read the file and count lines + skim for procedural blocks (lists of 
 ### 3. Bootstrap mode
 
 1. Explore the repo to learn what's actually here. Look at `package.json` / `pyproject.toml` / `Cargo.toml` / `Gemfile`, the top-level dir layout, the README, any existing `/docs`, the test setup, and 2–3 representative source files. **Explore proportionally** — your goal is to identify topics worth documenting, not to produce a complete codebase map. Stop reading once you have enough to draft a plan; depth comes later if a specific topic warrants it.
-2. Identify pattern-worthy topics. Common ones: testing conventions, build/deploy, auth flow, DB / migration playbook, caching or deferred-loading patterns, error handling, env setup, code style quirks.
+2. Identify pattern-worthy topics. Common ones: testing conventions, build/deploy, auth flow, DB / migration playbook, caching or deferred-loading patterns, error handling, env setup. Convention topics (how forms, routes, or components are built) must clear the bar in **Convention docs** below — code style quirks never do.
 3. Propose a plan to the user **before generating files**: which `/docs/<topic>.md` files you'd create and a one-line description of each. Let them prune or add.
 4. Generate `/docs/<topic>.md` files. Keep them concrete — show the actual pattern as it exists in the repo, with file path references (e.g., `src/lib/cache.ts:42`).
 5. Generate a lean `CLAUDE.md` with hard rules + the index of pointers.
@@ -92,6 +92,15 @@ If the file is already lean and pointer-based, say so plainly. Optionally sugges
 - **Be concrete.** Reference real files and line numbers (`src/lib/loader.ts:88`) instead of abstract descriptions.
 - **One topic per file.** If a doc is growing past ~300 lines, split it further and add a small index at the top.
 - **Match the shape to the content.** Playbooks want numbered steps. Pattern explanations want a "the pattern" + "when to use it" + "gotchas" rhythm. Reference docs want tables or definition lists. Pick what fits — don't force a template.
+
+### Convention docs
+
+Some docs hold rules new code must follow — `docs/FORMS.md`, `docs/ROUTES.md`. `/quality-review` checks diffs against exactly these docs and nothing else, so a rule written here is enforced, and a nit written here becomes a review finding forever. When bootstrapping one from code (never when extracting the user's own prose — that keeps their voice):
+
+- **Design rules only.** A rule governs how pieces of code relate, never what's inside one. It answers *where does this go?*, *what do I build it on?*, *when do I extract or split?*, or *how do pieces talk?* — e.g. "a component used in 2+ places moves to `components/`". Branch order, early return vs `else`, `a ??= b` vs `a = a ?? b`, local names, and anything a linter enforces never qualify.
+- **"When <situation>, <do this>."** A real rule reads naturally that way; a nit reads absurd ("When a component can render nothing, put the null check first"). If it sounds absurd, drop it.
+- **2+ real examples per rule.** A conditional rule ("used in 2+ places") also needs a counter-example — code where the condition doesn't hold, done the other way. Without one, the condition is a guess.
+- **The user cuts before you write.** Show each proposed rule in the plan; drop anything they wouldn't comment on in a review.
 
 ## Things to be careful about
 
