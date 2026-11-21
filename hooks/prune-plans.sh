@@ -48,6 +48,6 @@ done
 if [ -n "$pruned" ]; then
   count=$(echo $pruned | wc -w | tr -d ' ')
   list=$(echo $pruned | sed 's/ /, /g')
-  printf '{"systemMessage": "🧹 Pruned %s plan suite(s) older than %s days: %s"}\n' "$count" "$retain" "$list"
+  printf '{"systemMessage": "Pruned %s plan suite(s) older than %s days: %s"}\n' "$count" "$retain" "$list"
 fi
 exit 0

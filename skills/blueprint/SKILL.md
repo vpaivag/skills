@@ -73,7 +73,7 @@ Then ask: implement it directly, or force the blueprint. Recommend implementing 
 
 **Too big.** The task holds more than one independently shippable unit — pieces that could each merge and deliver value alone. Name the units in one line each and recommend splitting: one issue and one blueprint per unit (via `/issue` sub-issues, or separate `/blueprint` runs). Ask whether to split (recommended), plan only one named unit, or force the whole task. On split, end the turn — nothing is written.
 
-**Right-sized.** Print `🚦 Size: blueprint — <the signal(s) that fired, or "right-sized">` and continue in the same turn.
+**Right-sized.** Print `Size: blueprint — <the signal(s) that fired, or "right-sized">` and continue in the same turn.
 
 ### Stage 3 — Explore & interview
 
