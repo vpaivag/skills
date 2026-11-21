@@ -205,7 +205,7 @@ Needs the Linear MCP connected.
 
 **Trigger:** `/setup` or asking to configure where plans live, set up the plans directory, or whether plans should be gitignored.
 
-Writes a small `.claude/plans-config.json` that the planning skills (`/blueprint`, `/build`, `/qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
+Writes a small `.claude/plans-config.json` that the planning skills (`/blueprint`, `/build`, `/qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them, whether to delete old plans after N days), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional. With `retainDays` set, `/blueprint` prunes suites older than that each time it starts a new one — never a suite tracked in git; without it, nothing is ever deleted.
 
 → [`skills/setup`](./skills/setup)
 
