@@ -134,7 +134,7 @@ Or use a local clone instead of GitHub:
 The single planning front door. One conversational session — the **elephant**, which holds every decision — takes a task from stated intent to an approved suite:
 
 - **Size first** — too small or a direct fix, and it says so ("we'd be overthinking this") and offers to implement directly; you can always force the plan. More than one independently shippable unit, and it recommends splitting into one issue and one blueprint per unit.
-- **Interview** — unless the conversation already holds the discussion (you grilled first), it grills you itself using a vendored copy of [mattpocock/skills](https://github.com/mattpocock/skills)' `grilling` (MIT): numbered rounds, a recommended answer per question, facts looked up rather than asked. Done when expected behavior, edge cases, scope, and every real decision can be stated without guessing.
+- **Interview** — unless the conversation already holds the discussion (you grilled first), it grills you itself with [mattpocock/skills](https://github.com/mattpocock/skills)' `grilling` — the installed skill when you have it, otherwise a vendored copy (MIT): numbered rounds, a recommended answer per question, facts looked up rather than asked. Done when expected behavior, edge cases, scope, and every real decision can be stated without guessing.
 - **Goldfish review** — four blind `gap-finder` agents read only `plan.md`, one lens each (edge & failure, scope & ambiguity, users & data, comprehension), and return the questions a cold reader is left with. The elephant triages them under strict rules — "it was intentional" is not evidence — and routes each answer to `context.md` (intent) or `plan.md` (plan).
 - **Blind QA, agent-free render** — `qa-author` writes `qa-plan.md` from the settled `context.md` only; `render.sh` turns the suite markdown into `visual.html` with no agent.
 
@@ -205,7 +205,7 @@ Needs the Linear MCP connected.
 
 **Trigger:** `/setup` or asking to configure where plans live, set up the plans directory, or whether plans should be gitignored.
 
-Writes a small `.claude/plans-config.json` that the planning skills (`/blueprint`, `/build`, `/qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
+Writes a small `.claude/plans-config.json` that the planning skills (`/blueprint`, `/build`, `/qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them, whether to delete old plans after N days), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional. With `retainDays` set, the plugin's `SessionStart` hook prunes suites older than that whenever a session starts — never a suite tracked in git; without it, nothing is ever deleted. (The hook ships with the plugin install, not the skills CLI.)
 
 → [`skills/setup`](./skills/setup)
 
@@ -294,6 +294,9 @@ Split context is the design principle throughout: an agent that hasn't seen the 
 agents/
   gap-finder.md
   qa-author.md
+hooks/
+  hooks.json         # SessionStart → prune-plans.sh (opt-in via retainDays)
+  prune-plans.sh
 assets/
   visual/            # agent-free renderer for visual.html: render.sh/js, template, blocks.css/js, BLOCKS.md, mermaid (opt-in)
 skills/

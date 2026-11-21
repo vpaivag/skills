@@ -33,10 +33,11 @@ Before exploring, read `CLAUDE.md` at the project root if it exists. It contains
 
 ## Operating mode
 
+- **Old plans are not context.** Never read anything under `<plansDir>` while sizing or exploring, and tell every Explore subagent to exclude it from every search and read. Earlier suites describe plans, not code — some never shipped, some shipped differently. The only suite this skill reads is the one it is writing.
 - **Read-only on code.** Code access is `Read`, `Glob`, `Grep`, and read-only `Bash` (e.g. `git log`, `git diff --stat`, `ls`). The only writes are the suite directory contents and an optional `.gitignore` append. The single exception is the short-circuit's "implement directly" answer, which ends the blueprint before anything is written.
 - **The orchestrator owns the conversation.** Subagents cannot talk to the user; the interview, triage questions, and approval happen in this session. Subagents earn their isolation through parallelism (explore fan-out) or deliberate blindness (`gap-finder`, `qa-author`).
 - **The suite directory is the interface between agents.** Subagents read and write files in the suite dir; do not paste artifacts into prompts when a file path will do.
-- **Do not auto-invoke `/build`, `/qa`, or any other skill.** The handoff is the user's job — fresh sessions keep the executor's and QA's context clean.
+- **Do not auto-invoke `/build`, `/qa`, or any other skill.** The handoff is the user's job — fresh sessions keep the executor's and QA's context clean. The one exception is the `grilling` skill in Stage 3: its context should carry over, so it runs inside this session.
 
 ## Stages
 
@@ -62,7 +63,7 @@ Read `CLAUDE.md` (see Project conventions), then explore just enough to size the
 **Too small.** No signal fires and the change is direct — one obvious touchpoint, an outcome nobody would misread. Print:
 
 ```
-🚦 This task is too small or has a direct solution — we'd be overthinking it. <one-line reason>
+This task is too small or has a direct solution — we'd be overthinking it. <one-line reason>
 ```
 
 Then ask: implement it directly, or force the blueprint. Recommend implementing directly. Forcing is always available — the dev may know about something this sizing missed.
@@ -72,7 +73,7 @@ Then ask: implement it directly, or force the blueprint. Recommend implementing 
 
 **Too big.** The task holds more than one independently shippable unit — pieces that could each merge and deliver value alone. Name the units in one line each and recommend splitting: one issue and one blueprint per unit (via `/issue` sub-issues, or separate `/blueprint` runs). Ask whether to split (recommended), plan only one named unit, or force the whole task. On split, end the turn — nothing is written.
 
-**Right-sized.** Print `🚦 Size: blueprint — <the signal(s) that fired, or "right-sized">` and continue in the same turn.
+**Right-sized.** Print `Size: blueprint — <the signal(s) that fired, or "right-sized">` and continue in the same turn.
 
 ### Stage 3 — Explore & interview
 
@@ -80,8 +81,12 @@ Then ask: implement it directly, or force the blueprint. Recommend implementing 
 
 **Interview.** First decide whether the discussion already happened:
 
-- **The conversation already holds it** (the dev grilled the task before invoking `/blueprint`, or a design discussion precedes this turn): summarize the decisions and edge cases you are taking from it, and ask whether to skip the interview. Recommend skipping. Skipping still keeps Stage 4's gap review — the goldfish catch the discussion's blind spots too.
-- **Otherwise** — a fresh session, or only a one-line task or a product-level issue: read [GRILLING.md](./GRILLING.md) **now** and interview the dev by it. Its rounds and recommended answers replace this skill's question format for the interview. Facts go to explore subagents, never to the dev; decisions go to the dev.
+- **The conversation already holds it** (the dev grilled the task before invoking `/blueprint`, or a design discussion precedes this turn): summarize the decisions and edge cases you are taking from it, and ask whether to skip the interview. Recommend skipping. Skipping still keeps Stage 5's gap review — the goldfish catch the discussion's blind spots too.
+- **Otherwise** — a fresh session, or only a one-line task or a product-level issue: interview the dev with the grilling skill.
+  - **If a `grilling` skill is available** in this session (e.g. `mattpocock-skills:grilling`), invoke it through the Skill tool — the installed copy is the one the dev keeps up to date.
+  - **Otherwise**, read the vendored [GRILLING.md](./GRILLING.md) **now** and interview the dev by it.
+
+  Either way, its rounds and recommended answers replace this skill's question format for the interview. Facts go to explore subagents, never to the dev; decisions go to the dev. When the interview ends, continue with this skill — grilling settles the understanding, it does not act on it.
 
 The interview is done when you can state, without guessing:
 
