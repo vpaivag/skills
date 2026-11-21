@@ -13,7 +13,15 @@ This skill does NOT write `CLAUDE.md` for the user, and does NOT implement the c
 
 ## Asking questions
 
-This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode — every call site below that says "call `AskUserQuestion`" follows this fallback rule.
+Ask in plain text, in numbered rounds, with your recommended answer for each question:
+
+```
+❓ **Q1** - **<question title>**: <question body, with the options when there are any>
+
+➡️ <your recommended answer>
+```
+
+Word each question so "yes" accepts your recommendation. Then wait for the reply.
 
 ## Operating mode
 
@@ -35,9 +43,9 @@ Before anything else, check `CLAUDE.md` at the project root.
   - has no concrete project-specific content (reads like generic boilerplate), OR
   - links point to files that don't exist (broken index).
 
-  If at least one signal fires, surface the concern and ask via `AskUserQuestion`:
+  If at least one signal fires, surface the concern and ask:
   - "`CLAUDE.md` looks thin — a richer one would make this tour much better. How do you want to proceed?"
-  - Options: "Stop and recommend /claude-md-refactor (Recommended)" / "Continue with what's there".
+  - Recommend stopping and running `/claude-md-refactor`; the alternative is continuing with what's there.
 
   Respect the answer. If they stop, end the skill with a short pointer to `/claude-md-refactor`.
 
@@ -56,7 +64,7 @@ Drive an interactive walkthrough in conversation. Suggested structure (use as a 
 - **Conventions and patterns** — the project-specific patterns the newcomer must internalize (naming, testing, error handling, module boundaries — whatever the docs stress).
 - **Gotchas** — any "always do X" / "never do Y" rules.
 
-Pace yourself. After each section, ask via `AskUserQuestion` whether the user wants to go deeper, move on, or skip ahead. Don't dump everything at once.
+Pace yourself. After each section, ask whether the user wants to go deeper, move on, or skip ahead. Don't dump everything at once.
 
 Do **not** write any file during this phase. The tour is conversational.
 
@@ -73,7 +81,7 @@ If the repo has no obvious patterns to exercise, fall back to a generic task: ad
 
 Write the task to `.claude/onboarding-task.md` (single fixed path; not under `.claude/plans/`, since this is unrelated to planning).
 
-**If the file already exists**, ask via `AskUserQuestion` before writing: "Overwrite (Recommended) / Cancel". No append option — task files don't compose.
+**If the file already exists**, ask before writing whether to overwrite it (recommended) or cancel. No append option — task files don't compose.
 
 Task spec structure (in the file itself):
 

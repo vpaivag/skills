@@ -1,6 +1,7 @@
 // blocks.js — block upgrades + review mode for visual.html.
-// Authored once in the plugin; copied into each suite dir by visual-planner.
-// No network access, no dependencies; mermaid.min.js is optional and loaded by the template.
+// Authored once in the plugin; copied into each suite dir by render.sh, and runs
+// after render.js has turned the embedded markdown into block markup.
+// No network access, no dependencies; mermaid.min.js is optional and linked by render.sh.
 (function () {
   "use strict";
 
@@ -77,7 +78,10 @@
       // tolerate names that already carry their own "Phase n —" prefix
       var raw = ph.getAttribute("name") || "";
       var label = /^\s*phase\b/i.test(raw) ? raw : "Phase " + (i + 1) + " — " + raw;
-      name.innerHTML = label + ' <span class="ph-caret"></span>';
+      name.textContent = label + " ";
+      var caretEl = document.createElement("span");
+      caretEl.className = "ph-caret";
+      name.append(caretEl);
       ph.prepend(name);
       if (phases.length > 3 && i > 0) ph.setAttribute("data-collapsed", "");
       function caret() {
@@ -92,15 +96,6 @@
   }
 
   function upgradeMisc() {
-    document.querySelectorAll("contract-diff").forEach(function (cd) {
-      var t = document.createElement("div");
-      t.className = "cd-title";
-      t.textContent = cd.getAttribute("title") || "";
-      var grid = document.createElement("div");
-      grid.className = "cd-grid";
-      while (cd.firstChild) grid.appendChild(cd.firstChild);
-      cd.append(t, grid);
-    });
     document.querySelectorAll("option-item").forEach(function (oi) {
       var n = document.createElement("div");
       n.className = "oi-name";
@@ -132,10 +127,6 @@
       }
       group("Expected behaviors", ebs);
       group("Criteria", qas);
-    });
-    document.querySelectorAll("wf-text").forEach(function (wt) {
-      var n = parseInt(wt.getAttribute("lines") || "3", 10);
-      for (var i = 0; i < n; i++) wt.appendChild(document.createElement("i"));
     });
   }
 
@@ -213,7 +204,7 @@
       saveBtn = document.createElement("button");
       saveBtn.className = "primary";
       saveBtn.textContent = "Save review.json";
-      saveBtn.title = "Pick the suite directory once; writes the verdict for the /plan session to read";
+      saveBtn.title = "Pick the suite directory once; writes the verdict for the /blueprint session to read";
       saveBtn.addEventListener("click", saveReviewJson);
       bar.append(saveBtn);
     }
