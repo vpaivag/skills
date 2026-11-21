@@ -1,6 +1,6 @@
 ---
 name: build
-description: Execute a plan.md produced by /plan. Reads the plan, confirms with the user, implements the phases in order, verifies each mechanical acceptance criterion (AC-n), and ends with the /qa handoff. Run it in a fresh session with `claude --model sonnet "/build <path>"`. Use when the user invokes /build <path>.
+description: Execute a plan.md produced by /blueprint. Reads the plan, confirms with the user, implements the phases in order, verifies each mechanical acceptance criterion (AC-n), and ends with the /qa handoff. Run it in a fresh session with `claude --model sonnet "/build <path>"`. Use when the user invokes /build <path>.
 ---
 
 # /build
@@ -15,7 +15,15 @@ If given the suite dir, the plan is `plan.md` inside it. Suite paths are relativ
 
 ## Asking questions
 
-This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUserQuestion` is not available (older Claude Code versions, restricted environments), fall back to plain text: print the question, list the options as a numbered list with the recommended option marked `(Recommended)`, and wait for the user's reply (a number or the option label). The skill proceeds normally in either mode.
+Ask in plain text, in numbered rounds, with your recommended answer for each question:
+
+```
+❓ **Q1** - **<question title>**: <question body, with the options when there are any>
+
+➡️ <your recommended answer>
+```
+
+Word each question so "yes" accepts your recommendation. Then wait for the reply.
 
 ## Phases
 
@@ -25,12 +33,14 @@ Read `plan.md` as your **first action**. Do not explore or implement before read
 
 Required in every plan file (per `skills/blueprint/PLAN-FORMAT.md`):
 
-- YAML frontmatter with `artifact: plan`, `title`, `path`, `context`, `created`
+- YAML frontmatter with `artifact: plan`, `title`, `context`, `created`
 - `## Context`, `## Approach`, `## Files changed`, `## Phases`, `## Risks & edge cases`, `## Acceptance criteria`
 
 If any required section or frontmatter key is missing, stop and tell the user the plan is malformed.
 
-Also read `CLAUDE.md` at the project root for project conventions. Do **not** read `qa-plan.md` — behavioral verification belongs to a separate, unbiased session.
+Also read `CLAUDE.md` at the project root for project conventions. Do **not** read `qa-plan.md` or `context.md` — behavioral verification belongs to a separate, unbiased session, and `plan.md` is self-contained.
+
+If the plan has `## Decisions`, they are settled: implement the chosen option, never a rejected one. If reality makes a decision impossible, stop and ask — do not re-decide.
 
 ### Phase 2 — Confirm
 

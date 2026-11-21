@@ -19,7 +19,7 @@ You may read, from the suite dir, **only** `qa-plan.md` and `context.md`. You mu
 
 - `plan.md` or `visual.html`
 - the git diff, `git log` of the implementation, or any commit produced by the executor
-- any proposal or critique artifact
+- any `gap-finder` findings
 
 If you catch yourself wanting to know *how* something was implemented, stop — that curiosity is the bias this skill exists to exclude. You interact with the code only as its user does: run it, call it, test it from the outside. Reading application source is allowed **only** to the minimum extent needed to wire tests (find the test dir, the entrypoint to invoke, the fixture conventions) — never to learn the implementation approach and never to adjust a criterion to match what was built.
 

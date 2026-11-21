@@ -1,6 +1,6 @@
 /* blocks.css — theme tokens, base typography, and block styles for visual.html.
-   Authored once in the plugin; copied into each suite dir by visual-planner.
-   visual-planner must not restyle pages — content region only. */
+   Authored once in the plugin; copied into each suite dir by render.sh.
+   Styles exactly the blocks render.js emits — see BLOCKS.md. */
 
 /* palette: user's shadcn theme, committed to dark mode — monochrome neutrals,
    vermilion primary, Geist Mono everywhere, radius 0, no shadows.
@@ -222,25 +222,6 @@ phase-item[data-collapsed] > ol { display: none; }
 phase-item ol { margin: 8px 0 0; padding-left: 22px; }
 phase-item li { margin-bottom: 4px; }
 
-/* ---- contract-diff ---- */
-contract-diff { display: block; margin-bottom: 14px; }
-contract-diff > .cd-title { font-weight: 600; font-family: var(--font); font-size: 13.5px; margin-bottom: 8px; }
-/* stacked rows, never side-by-side: full-width code lines, before reads into after */
-contract-diff .cd-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
-contract-before, contract-after { display: block; border-radius: var(--radius); padding: 12px 14px 10px; overflow-x: auto; }
-contract-before { background: var(--bad-soft); }
-contract-after { background: var(--ok-soft); }
-contract-before::before, contract-after::before {
-  display: block;
-  font: 600 10px/1 inherit;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-contract-before::before { content: "before"; color: var(--bad); }
-contract-after::before { content: "after"; color: var(--ok); }
-contract-before code, contract-after code { background: none; border: none; padding: 0; white-space: pre; display: block; }
-
 /* ---- option-compare ---- */
 option-compare { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 option-item { display: block; border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; }
@@ -258,13 +239,6 @@ option-item[verdict="chosen"]::before { content: "chosen"; background: var(--ok-
 option-item[verdict="rejected"]::before { content: "rejected"; background: var(--surface-2); color: var(--muted); }
 option-item > .oi-name { font-weight: 600; margin-bottom: 6px; }
 option-item p { font-size: 13.5px; color: var(--muted); }
-ul.attacks { margin: 8px 0 0; padding: 0; list-style: none; }
-ul.attacks li { font-size: 13px; padding: 4px 0 4px 14px; position: relative; }
-ul.attacks li::before { content: ""; position: absolute; left: 0; top: 10px; width: 6px; height: 6px; border-radius: var(--radius); }
-ul.attacks li[data-severity="high"]::before { background: var(--bad); }
-ul.attacks li[data-severity="medium"]::before { background: var(--warn); }
-ul.attacks li[data-severity="low"]::before { background: var(--muted); }
-
 /* ---- risk-matrix ---- */
 risk-matrix { display: block; }
 risk-item {
@@ -295,102 +269,6 @@ risk-item::after {
   font-size: 13px;
   margin: 4px 0 0 2px;
 }
-
-/* ---- wire-frame ---- */
-wire-frame {
-  display: block;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  padding: 14px;
-  background: var(--surface-2);
-  margin-bottom: 14px;
-}
-wire-frame::before {
-  content: attr(label);
-  display: block;
-  font: 600 11px/1 inherit;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 10px;
-}
-wf-nav, wf-box, wf-btn, wf-input, wf-text, wf-row, wf-col { display: block; }
-wf-nav {
-  height: 34px;
-  border: 1.5px dashed var(--muted);
-  border-radius: var(--radius);
-  margin-bottom: 8px;
-  position: relative;
-}
-wf-nav::after, wf-btn::after, wf-input::after {
-  content: attr(label);
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 11.5px;
-  padding: 0 8px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-/* box labels sit at the top, padded, never over the content */
-wf-box::after {
-  content: attr(label);
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  padding: 6px 10px 0;
-  color: var(--muted);
-  font-size: 11.5px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  pointer-events: none;
-}
-wf-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: stretch; }
-wf-col { display: flex; flex-direction: column; gap: 8px; flex: 0 0 auto; min-width: 120px; }
-wf-col[grow] { flex: 1 1 auto; }
-wf-box { border: 1.5px dashed var(--muted); border-radius: var(--radius); min-height: 70px; position: relative; padding: 26px 10px 10px; flex: 1; }
-wf-btn { width: 90px; height: 32px; border: 1.5px solid var(--muted); border-radius: var(--radius); position: relative; align-self: flex-end; }
-wf-input { flex: 1; height: 32px; border: 1.5px dashed var(--muted); border-radius: var(--radius); position: relative; }
-wf-text { display: grid; gap: 6px; }
-wf-text > i { display: block; height: 8px; border-radius: var(--radius); background: var(--line); }
-wf-text > i:last-child { width: 60%; }
-
-/* ---- seq-flow ---- */
-seq-flow { display: block; }
-seq-flow::before {
-  content: attr(label);
-  display: block;
-  font: 600 11px/1 inherit;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 8px;
-}
-seq-step {
-  display: grid;
-  grid-template-columns: minmax(140px, auto) 1fr;
-  gap: 12px;
-  padding: 7px 0;
-  border-top: 1px solid var(--line);
-  align-items: baseline;
-  font-size: 13.5px;
-}
-seq-step:first-of-type { border-top: none; }
-seq-step::before {
-  content: attr(from) " → " attr(to);
-  font-family: var(--font);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--accent);
-  white-space: nowrap;
-}
-seq-step[reply]::before { content: attr(from) " ⇠ " attr(to); color: var(--muted); }
 
 /* ---- qa-coverage ---- */
 qa-coverage { display: block; }
@@ -427,6 +305,37 @@ qa-item::after {
   white-space: pre-wrap;
 }
 qa-item:not([covers])::after { content: "verify: " attr(verify); }
+eb-item[oos]::before { background: var(--warn-soft); color: var(--warn); }
+eb-item[oos]::after { content: " — listed out of scope in qa-plan"; color: var(--warn); font-size: 13px; }
+
+/* ---- acceptance criteria ---- */
+ul.ac-list { list-style: none; margin: 0; padding: 0; }
+ul.ac-list li { padding: 7px 0; border-top: 1px solid var(--line); }
+ul.ac-list li:first-child { border-top: none; }
+ul.ac-list .ac-id {
+  display: inline-block;
+  font: 600 11px/1.6 var(--font);
+  background: var(--surface-2);
+  color: var(--muted);
+  border-radius: var(--radius);
+  padding: 1px 7px;
+  margin-right: 10px;
+}
+
+/* ---- render warnings (render.js: a section broke its format shape) ---- */
+.render-warn {
+  border: 1px dashed var(--warn);
+  background: var(--warn-soft);
+  color: var(--warn);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  font-size: 13px;
+}
+.render-warn-top { margin-bottom: 20px; }
+.render-warn ul { margin: 6px 0 0; padding-left: 18px; }
+blockquote { margin: 0 0 10px; padding-left: 12px; border-left: 2px solid var(--line); color: var(--muted); }
+a { color: var(--accent); }
 
 @media (prefers-reduced-motion: no-preference) {
   review-section, #review-bar button { transition: border-color 0.15s ease, background 0.15s ease; }

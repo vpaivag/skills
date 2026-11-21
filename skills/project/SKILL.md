@@ -9,7 +9,15 @@ Turn a goal that needs several features into a Linear project the team can plan 
 
 ## Asking questions
 
-Ask via `AskUserQuestion`, recommended option first. If it is unavailable, print the questions as a numbered list with options and wait for the reply.
+Ask in plain text, in numbered rounds, with your recommended answer for each question:
+
+```
+❓ **Q1** - **<question title>**: <question body, with the options when there are any>
+
+➡️ <your recommended answer>
+```
+
+Word each question so "yes" accepts your recommendation. Then wait for the reply.
 
 ## Linear vocabulary
 

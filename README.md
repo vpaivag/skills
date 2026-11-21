@@ -15,19 +15,17 @@ flowchart TD
     execute -->|"qa-plan.md · fresh session, blind to the plan"| qa
     qa --> adv
 
-    critic(plan-critic)
+    gaps(gap-finder ×4)
     author(qa-author)
-    visual(visual-planner)
 
-    plan -.red/blue critique.-> critic
+    plan -.goldfish review of plan.md.-> gaps
     plan -.authors qa-plan blind.-> author
-    plan -.renders review surface.-> visual
 
     classDef helper fill:#f5f5f5,stroke:#999,stroke-dasharray:4 3,color:#555
-    class critic,author,visual helper
+    class gaps,author helper
 ```
 
-`/blueprint` is the single front door: it gathers context, gates on whether a genuine design choice exists, and produces a suite — `context.md`, one executable `plan.md`, a `qa-plan.md` authored **blind** from intent alone, and a `visual.html` review surface where you approve or flag the plan in your browser. Execution and QA then run in fresh sessions with deliberately separated knowledge: the executor never does behavioral QA, and QA never sees the plan.
+`/blueprint` is the single front door: it sizes the task, interviews you for edge cases and decisions, has blind goldfish review the plan cold, and produces a suite — `context.md`, one executable `plan.md`, a `qa-plan.md` authored **blind** from intent alone, and a `visual.html` review surface (rendered by a script, no agent) where you approve or flag the plan in your browser. Execution and QA then run in fresh sessions with deliberately separated knowledge: the executor never does behavioral QA, and QA never sees the plan.
 
 ## Contents
 
@@ -50,7 +48,7 @@ flowchart TD
   - [Review](#review)
     - [intent-review](#intent-review)
     - [adversarial-review](#adversarial-review)
-    - [pattern-review](#pattern-review)
+    - [quality-review](#quality-review)
 - [Agents](#agents)
 - [Layout](#layout)
 - [Contributing](#contributing)
@@ -81,7 +79,7 @@ Target a specific agent (e.g. Claude Code):
 npx skills@latest add vpaivag/skills -a claude-code
 ```
 
-Note: the CLI installs skills only — the declared agents (`plan-critic`, `qa-author`, `visual-planner`) and the visual asset library ship with the Claude Code plugin, so `/blueprint`'s subagent stages and `visual.html` need the plugin install below.
+Note: the CLI installs skills only — the declared agents (`gap-finder`, `qa-author`) and the visual renderer ship with the Claude Code plugin, so `/blueprint`'s subagent stages and `visual.html` need the plugin install below.
 
 ### As a Claude Code plugin
 
@@ -131,18 +129,20 @@ Or use a local clone instead of GitHub:
 
 #### blueprint
 
-**Trigger:** `/blueprint <task>`, or asking to plan a task or feature, gather context before implementation, or get a quick/deep plan.
+**Trigger:** `/blueprint <task or issue>`, or asking to plan a task or feature, blueprint an issue, or gather context before implementation.
 
-The single planning front door — it replaced the retired `/intake`, `/simple-plan`, and `/deep-plan`. One conversational session takes a task from stated intent to an approved suite: restate → parallel explore fan-out → **batched** Q&A (no question drip) → persist `context.md` → gate.
+The single planning front door. One conversational session — the **elephant**, which holds every decision — takes a task from stated intent to an approved suite:
 
-The gate decides how much process the task deserves:
-- **Mechanical path** — no genuine design choice: straight to a single direct plan. Small tasks can optionally be implemented in-session after approval.
-- **Design path** — a gate criterion fired (hard-to-reverse, surprising-without-context, real-tradeoff, cross-concern): 2–3 independent proposal agents, each proposal red/blue-critiqued by a split-context `plan-critic` that never sees the codebase or the other proposals, then you pick the direction with the surviving critiques on the table.
+- **Size first** — too small or a direct fix, and it says so ("we'd be overthinking this") and offers to implement directly; you can always force the plan. More than one independently shippable unit, and it recommends splitting into one issue and one blueprint per unit.
+- **Interview** — unless the conversation already holds the discussion (you grilled first), it grills you itself with [mattpocock/skills](https://github.com/mattpocock/skills)' `grilling` — the installed skill when you have it, otherwise a vendored copy (MIT): numbered rounds, a recommended answer per question, facts looked up rather than asked. Done when expected behavior, edge cases, scope, and every real decision can be stated without guessing.
+- **Goldfish review** — four blind `gap-finder` agents read only `plan.md`, one lens each (edge & failure, scope & ambiguity, users & data, comprehension), and return the questions a cold reader is left with. The elephant triages them under strict rules — "it was intentional" is not evidence — and routes each answer to `context.md` (intent) or `plan.md` (plan).
+- **Blind QA, agent-free render** — `qa-author` writes `qa-plan.md` from the settled `context.md` only; `render.sh` turns the suite markdown into `visual.html` with no agent.
 
-Either way the suite ends up with:
-- `plan.md` — one executable plan (phases, not chunks; pure text; interfaces and intent, never implementation bodies)
-- `qa-plan.md` — behavioral criteria authored by the `qa-author` agent from `context.md` **only**, before and without ever seeing the chosen approach
-- `visual.html` — the review surface: file map, phases, contract diffs, diagrams, QA coverage map. Approve or flag sections in the browser; the verdict comes back via `review.json` (File System Access API) or copy-paste.
+The suite:
+- `context.md` — intent and implementation-free expected behavior (`EB-n`)
+- `plan.md` — one executable plan: decisions, files, phases, risks, mechanical `AC-n`; interfaces and intent, never implementation bodies; zero design decisions left to the executor
+- `qa-plan.md` — behavioral criteria authored blind, before and without ever seeing the plan
+- `visual.html` — decisions, file map, phases, risks, an optional architecture diagram, and the QA coverage map. Approve or flag sections in the browser; the verdict comes back via `review.json` (File System Access API) or copy-paste. Sections that break their format render raw under a warning instead of disappearing.
 
 Run it on a strong model (Opus or Fable) — the handoff commands it prints pin Sonnet for the downstream sessions.
 
@@ -205,7 +205,7 @@ Needs the Linear MCP connected.
 
 **Trigger:** `/setup` or asking to configure where plans live, set up the plans directory, or whether plans should be gitignored.
 
-Writes a small `.claude/plans-config.json` that the planning skills (`/blueprint`, `/build`, `/qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional.
+Writes a small `.claude/plans-config.json` that the planning skills (`/blueprint`, `/build`, `/qa`) consult to find the plans directory. Drives a short Q&A (where plans should live, whether to gitignore them, whether to delete old plans after N days), then writes at most two files: `.claude/plans-config.json` and — if opted in — an entry in `.gitignore`. Planning skills fall back to `.claude/plans` when the config is absent, so running `/setup` is optional. With `retainDays` set, the plugin's `SessionStart` hook prunes suites older than that whenever a session starts — never a suite tracked in git; without it, nothing is ever deleted. (The hook ships with the plugin install, not the skills CLI.)
 
 → [`skills/setup`](./skills/setup)
 
@@ -219,6 +219,8 @@ Three modes:
 - **Audit** an existing `CLAUDE.md` and split it.
 - **Bootstrap** a `CLAUDE.md` + `/docs` for a repo that has none.
 - **Confirm** a healthy `CLAUDE.md` doesn't need changes (avoids over-editing).
+
+Convention docs it writes (`docs/FORMS.md`, `docs/ROUTES.md`) are what `/quality-review` enforces, so they hold design rules only — "when a component is used in 2+ places, move it to `components/`", never code style — each backed by real examples, and you cut the list before anything is written.
 
 → [`skills/claude-md-refactor`](./skills/claude-md-refactor)
 
@@ -234,7 +236,7 @@ Ramps a newcomer up on an unfamiliar codebase in three phases: a `CLAUDE.md`-qua
 
 ### Review
 
-A PR review is three questions, each asked by a skill with its own blindness: `/intent-review` — *is it what was asked?* (sees the request, never the author's story) — `/adversarial-review` — *is it broken?* (sees the diff, never the intent) — and `/pattern-review` — *does it fit the repo?* (conventions are mined from existing code by agents that never see the diff). All run in a fresh session.
+A PR review is three questions, each asked by a skill with its own blindness: `/intent-review` — *is it what was asked?* (sees the request, never the author's story) — `/adversarial-review` — *is it broken?* (sees the diff, never the intent) — and `/quality-review` — *is it well built for this repo?* (checked against the rules your docs write down, plus a design-smell baseline). All run in a fresh session.
 
 #### intent-review
 
@@ -261,28 +263,27 @@ The intent-blind counterpart to `intent-review`; the natural last step of the pl
 
 → [`skills/adversarial-review`](./skills/adversarial-review)
 
-#### pattern-review
+#### quality-review
 
-**Trigger:** `/pattern-review [diff]`, or asking whether a PR or diff follows the repo's patterns or conventions, "is this how we do it here?", or to catch reinvented helpers.
+**Trigger:** `/quality-review [diff]`, or asking whether a PR or diff follows the repo's patterns or conventions, "is this how we do it here?", for a quality or design review, or to catch reinvented helpers and design smells.
 
-Checks that a diff **looks like the repo it lands in** — error handling, naming, placement, test shape, and existing helpers reused instead of rewritten. Not bugs, not fit to the request: only consistency with what the repo already does.
+Checks that a diff **is well built for the repo it lands in** — it follows the conventions the repo has written down, reuses existing helpers instead of rewriting them, and doesn't introduce design smells. Not bugs, not fit to the request, not style.
 
-- **Mined blind** — each changed unit is described without its code; miner subagents that never see the diff extract the repo's conventions for that kind of unit from the base ref (edited files count in their pre-change form, new files never), plus the helpers that already do its job.
-- **Family first** — a unit is judged against its nearest siblings before the repo as a whole, so a family that does things its own way isn't flagged for it.
-- **A pattern needs 2+ examples** — every convention cites at least two `file:line` examples (or a documented rule in `CLAUDE.md`; a one-member family counts as sibling precedent); where the repo already does it two ways, that's a split, not a finding.
-- **Compared, verified, reported** — 2+ comparers flag **deviations**, **reinvented helpers**, and deliberate **new patterns** (grouped as one finding, not one per site); every finding is re-checked against the real code. Report only.
+- **Repo rules from your docs** — each changed unit is mapped to the convention doc `CLAUDE.md` links for it (a form → `docs/FORMS.md`) and checked against it and `CLAUDE.md`'s hard rules, read at the base ref. A rule nobody wrote down is not a convention — no mining, no guessing. Units with no doc are reported as uncovered.
+- **Duplication** — a repo search per unit for existing code that already does its job, plus logic repeated within the change.
+- **Design smells** — a baseline of Fowler smells (Feature Envy, Primitive Obsession, Shotgun Surgery…) as labelled judgement calls on the diff's own code, capped at 5; a doc that endorses what a smell flags wins.
+- **Two axes, verified, reported** — a repo-rules comparer and a smell comparer run in parallel, blind to the request; every finding is re-checked against the real code, and the two axes are reported separately, never reranked. Report only.
 
-→ [`skills/pattern-review`](./skills/pattern-review)
+→ [`skills/quality-review`](./skills/quality-review)
 
 ## Agents
 
-The plugin ships three declared agents under `agents/`, spawned by `/blueprint` (and invocable directly). Each carries its expertise in its own system prompt and pins the model that fits its role:
+The plugin ships two declared agents under `agents/`, spawned by `/blueprint` (and invocable directly). Each carries its expertise in its own system prompt and pins the model that fits its role:
 
 | Agent | Model | Role | Deliberately blind to |
 |---|---|---|---|
-| `plan-critic` | opus | Red/blue critique of one proposal; only attacks that survive its own repair attempt are returned | the codebase, sibling proposals |
-| `qa-author` | inherit | Writes `qa-plan.md` from `context.md` alone — criteria test what was *asked*, not what was built | the plan, proposals, all code |
-| `visual-planner` | sonnet | Renders the suite into `visual.html` against the block library in `assets/visual/`; adds form, never facts | — |
+| `gap-finder` | sonnet | Goldfish review of `plan.md` through one lens (edge-failure, scope-ambiguity, users-data, comprehension); returns questions, never answers | the conversation, `context.md`, the codebase, the other lenses |
+| `qa-author` | inherit | Writes `qa-plan.md` from `context.md` alone — criteria test what was *asked*, not what was built | the plan, gap findings, all code |
 
 Split context is the design principle throughout: an agent that hasn't seen the design can't inherit the design's blind spots.
 
@@ -291,21 +292,23 @@ Split context is the design principle throughout: an agent that hasn't seen the 
 ```
 .claude-plugin/plugin.json
 agents/
-  plan-critic.md
+  gap-finder.md
   qa-author.md
-  visual-planner.md
+hooks/
+  hooks.json         # SessionStart → prune-plans.sh (opt-in via retainDays)
+  prune-plans.sh
 assets/
-  visual/            # block library for visual.html: template, blocks.css/js, BLOCKS.md, mermaid (opt-in)
+  visual/            # agent-free renderer for visual.html: render.sh/js, template, blocks.css/js, BLOCKS.md, mermaid (opt-in)
 skills/
   adversarial-review/SKILL.md
   claude-md-refactor/SKILL.md
   build/SKILL.md
   qa/SKILL.md
   onboarding/SKILL.md
-  blueprint/SKILL.md # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md
+  blueprint/SKILL.md # + CONTEXT-FORMAT.md, PLAN-FORMAT.md, QA-FORMAT.md, GRILLING.md (vendored)
   intent-review/SKILL.md
   issue/SKILL.md     # + ISSUE-FORMAT.md
-  pattern-review/SKILL.md
+  quality-review/SKILL.md
   project/SKILL.md   # + PROJECT-FORMAT.md
   setup/SKILL.md
 ```
@@ -323,7 +326,7 @@ PRs are welcome too, but for anything beyond a small fix it's worth opening an i
 
 This bundle isn't the only one worth installing. [`mattpocock/skills`](https://github.com/mattpocock/skills) has a great companion set — examples:
 
-- **`grill-me`** — interview-style stress test that drills into a plan or design until every branch of the decision tree is resolved.
+- **`grill-me`** — interview-style stress test that drills into a plan or design until every branch of the decision tree is resolved. `/blueprint` vendors its `grilling` core for its own interview, and skips the interview when you've already grilled in the session.
 - **`improve-codebase-architecture`** — guided pass for spotting and improving structural problems across a codebase.
 
 See the full list at [github.com/mattpocock/skills](https://github.com/mattpocock/skills).
@@ -332,4 +335,8 @@ See the full list at [github.com/mattpocock/skills](https://github.com/mattpococ
 
 Thanks to [@vavengh](https://github.com/vavengh) — the `/onboarding` skill was his idea, and he's contributed feedback that has helped improve several of the others.
 
+The design-smell baseline in `/quality-review` is adapted from [`mattpocock/skills`](https://github.com/mattpocock/skills)' `code-review` skill, itself drawn from Fowler's *Refactoring*.
+
 The visual review surface (`visual.html`) is inspired by [BuilderIO/skills](https://github.com/BuilderIO/skills)' `/visual-plan` — reimplemented here as a dependency-free static block library so plans render offline with no toolchain.
+
+The elephant/goldfish split in `/blueprint` follows Google's [Elephant-Goldfish Model](https://github.com/google/elephant-goldfish-model). Its interview vendors [mattpocock/skills](https://github.com/mattpocock/skills)' `grilling` skill (MIT).

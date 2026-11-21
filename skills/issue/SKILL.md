@@ -9,7 +9,15 @@ Turn rough input into Linear issues that stand alone: a dev or an agent with no 
 
 ## Asking questions
 
-Ask via `AskUserQuestion`, recommended option first. If it is unavailable, print the questions as a numbered list with options and wait for the reply.
+Ask in plain text, in numbered rounds, with your recommended answer for each question:
+
+```
+❓ **Q1** - **<question title>**: <question body, with the options when there are any>
+
+➡️ <your recommended answer>
+```
+
+Word each question so "yes" accepts your recommendation. Then wait for the reply.
 
 ## Linear vocabulary
 
@@ -37,7 +45,7 @@ Done when you can state the type, the layers, and the outcome in one sentence ea
 
 ### 2. Ask one batch
 
-Send a single `AskUserQuestion` call with up to four questions, skipping any the input already answers:
+Ask one round, skipping any question the input already answers:
 
 1. **Language** — the language of the title and prose (English / Español / other).
 2. **Team** — from `list_teams`; skip when the workspace has one team.

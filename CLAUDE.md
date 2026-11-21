@@ -2,7 +2,7 @@
 
 Claude Code plugin marketplace + skills bundle. Plugin name: `skills`. Marketplace name: `vpaivag`.
 
-Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on demand by the harness when its trigger fires. The plugin also ships declared agents (`agents/*.md`, auto-discovered) and the static asset library for `visual.html` (`assets/visual/`).
+Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on demand by the harness when its trigger fires. The plugin also ships declared agents (`agents/*.md`, auto-discovered) and the agent-free renderer and static asset library for `visual.html` (`assets/visual/`).
 
 ## Hard rules
 
@@ -14,11 +14,13 @@ Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on dema
 
   Agents are the analogous rule with two places: `agents/<name>.md` (auto-discovered, no manifest entry) and the Agents table in `README.md`.
 - **Version lives in `plugin.json` only.** Bump `version` in `.claude-plugin/plugin.json` for each release. Do **not** add a `version` field to `.claude-plugin/marketplace.json` — omitting it lets every git commit count as a new version, which is what enables `/plugin update` to detect changes without a manual marketplace bump. (See https://code.claude.com/docs/en/plugin-marketplaces.)
-- **Companion files live beside SKILL.md.** Some skills reference siblings (e.g. `skills/blueprint/CONTEXT-FORMAT.md`, `skills/blueprint/PLAN-FORMAT.md`, `skills/blueprint/QA-FORMAT.md`). Don't move or rename them without updating the references inside `SKILL.md` and `agents/*.md`.
+- **Companion files live beside SKILL.md.** Some skills reference siblings (e.g. `skills/blueprint/CONTEXT-FORMAT.md`, `skills/blueprint/PLAN-FORMAT.md`, `skills/blueprint/QA-FORMAT.md`, `skills/blueprint/GRILLING.md`). Don't move or rename them without updating the references inside `SKILL.md` and `agents/*.md`.
 - **`*-FORMAT.md` files are contracts, enforced just-in-time.** Skills and agents must instruct reading the format file immediately before writing its artifact ("now — not earlier, never from memory") and validating the written file against the format's Required list. Artifact formats use real YAML frontmatter and stable IDs (`EB-n`, `AC-n`, `B-n`) — never the retired `> **Field:**` blockquote style. Exception: formats whose artifact lives in an external tool rather than on disk (`skills/issue/ISSUE-FORMAT.md`, `skills/project/PROJECT-FORMAT.md` → a Linear description) skip frontmatter and IDs; the just-in-time read and Required-list validation still apply.
 - **Preserve the user's voice in skill prose.** Don't rewrite phrasing into a different style — the wording in each `SKILL.md` is intentional.
-- **Static assets and vanilla client-side JS only.** `assets/visual/` may hold CSS, dependency-free browser JS, HTML templates, and the vendored `mermaid.min.js` (plugin-side only — never copied into suite dirs; opt-in per the rule in `assets/visual/BLOCKS.md`). No build step, no package managers, no runtime dependencies, no servers, no CI scaffolding.
-- **Split context is the pipeline's design principle.** `qa-author` sees only `context.md`; `plan-critic` sees one proposal; `/qa` never reads `plan.md`. Don't "improve" a skill or agent by giving a blind role more context — the blindness is the feature.
+- **Static assets and vanilla client-side JS only.** `assets/visual/` may hold CSS, dependency-free browser JS, HTML templates, the vendored `mermaid.min.js` (plugin-side only — never copied into suite dirs; opt-in per the rule in `assets/visual/BLOCKS.md`), and one shell script: `render.sh`, a dependency-free POSIX `sh` embed step that builds `visual.html` without an agent. The only other script is `hooks/prune-plans.sh`, the dependency-free POSIX `sh` `SessionStart` hook (wired in `hooks/hooks.json`) that prunes plan suites older than `retainDays` — opt-in, never touches anything git tracks. No build step, no package managers, no runtime dependencies, no servers, no CI scaffolding.
+- **Plan formats and the renderer change together.** `render.js` parses the line shapes in `skills/blueprint/PLAN-FORMAT.md`, `CONTEXT-FORMAT.md`, and `QA-FORMAT.md`. Changing a section name or line shape means changing its parser in the same commit.
+- **Vendored skills stay verbatim.** `skills/blueprint/GRILLING.md` is mattpocock/skills' `grilling` (MIT), copied verbatim with its notice — `/blueprint`'s fallback when no `grilling` skill is installed. Re-sync it by hand from upstream and record the version in its header — never edit the body.
+- **Split context is the pipeline's design principle.** `qa-author` sees only `context.md`; `gap-finder` sees only `plan.md`; `/qa` never reads `plan.md`. Don't "improve" a skill or agent by giving a blind role more context — the blindness is the feature.
 - **Hand-offs follow context, not a fixed rule.** A skill invokes the next skill itself when the context should carry over (`/project` → `/issue` — the project's context is exactly what each issue needs). It prints the command for a fresh session when the context should not (`/blueprint` → `/build` / `/qa` — the executor and QA must not inherit why the plan is shaped the way it is).
 
 ## Layout
@@ -27,14 +29,17 @@ Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on dema
 .claude-plugin/
   plugin.json        # plugin manifest, lists skills + version
   marketplace.json   # marketplace manifest; no version field (see hard rules)
+hooks/
+  hooks.json         # SessionStart → prune-plans.sh
+  prune-plans.sh     # opt-in retainDays pruning of plan suites
 agents/
-  plan-critic.md     # red/blue proposal critic (opus)
+  gap-finder.md      # blind goldfish plan reviewer, one lens per spawn (sonnet)
   qa-author.md       # blind QA-plan author (inherit)
-  visual-planner.md  # suite → visual.html renderer (sonnet)
 assets/
-  visual/            # template.html, blocks.css, blocks.js, BLOCKS.md, mermaid.min.js
+  visual/            # render.sh, render.js, template.html, blocks.css, blocks.js, BLOCKS.md, mermaid.min.js
 skills/
   <name>/SKILL.md    # one skill per directory; companions allowed alongside
+  blueprint/         # SKILL.md + CONTEXT/PLAN/QA-FORMAT.md + GRILLING.md (vendored, MIT)
   issue/             # SKILL.md + ISSUE-FORMAT.md (Linear issue contract)
   project/           # SKILL.md + PROJECT-FORMAT.md (Linear project contract)
 README.md            # per-skill sections + Agents table; update when either changes

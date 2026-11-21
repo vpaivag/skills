@@ -1,7 +1,7 @@
 {
   "name": "skills",
-  "description": "The BBQ flow (Blueprint → Build → QA) — a planning pipeline with blind QA and a visual review surface, plus Linear issue and project drafting, adversarial, intent, and pattern review, and a CLAUDE.md refactor utility.",
-  "version": "0.10.0",
+  "description": "The BBQ flow (Blueprint → Build → QA) — a planning pipeline with an interview, blind goldfish gap review, blind QA, and an agent-free visual review surface, plus Linear issue and project drafting, adversarial, intent, and quality review, and a CLAUDE.md refactor utility.",
+  "version": "0.12.0",
   "author": {
     "name": "vpaivag",
     "email": "vpaivagross@gmail.com"
@@ -27,6 +27,6 @@
     "./skills/issue",
     "./skills/project",
     "./skills/intent-review",
-    "./skills/pattern-review"
+    "./skills/quality-review"
   ]
 }
