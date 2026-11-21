@@ -25,7 +25,7 @@ Word each question so "yes" accepts your recommendation. Then wait for the reply
 
 ## Plans directory
 
-Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` **at the project root** if present and use its `plansDir`; otherwise default to `.claude/plans` **relative to the project root** (the repository you are working in). Never resolve either path against the user's home directory — `~/.claude/plans` belongs to Claude Code itself and is always wrong here; suites live inside the repo. The config also carries a `gitignore` boolean (default `true`) — only manage `.gitignore` when that flag is true — and an optional `retainDays` positive integer (absent means keep suites forever). If the config file is missing or malformed, silently fall back to the defaults. Everywhere this skill says "the plans directory" or `<plansDir>` below, it means the resolved value.
+Resolve the plans directory before any path-touching action: read `.claude/plans-config.json` **at the project root** if present and use its `plansDir`; otherwise default to `.claude/plans` **relative to the project root** (the repository you are working in). Never resolve either path against the user's home directory — `~/.claude/plans` belongs to Claude Code itself and is always wrong here; suites live inside the repo. The config also carries a `gitignore` boolean (default `true`) — only manage `.gitignore` when that flag is true. If the config file is missing or malformed, silently fall back to the defaults. Everywhere this skill says "the plans directory" or `<plansDir>` below, it means the resolved value.
 
 ## Project conventions
 
@@ -34,7 +34,7 @@ Before exploring, read `CLAUDE.md` at the project root if it exists. It contains
 ## Operating mode
 
 - **Old plans are not context.** Never read anything under `<plansDir>` while sizing or exploring, and tell every Explore subagent to exclude it from every search and read. Earlier suites describe plans, not code — some never shipped, some shipped differently. The only suite this skill reads is the one it is writing.
-- **Read-only on code.** Code access is `Read`, `Glob`, `Grep`, and read-only `Bash` (e.g. `git log`, `git diff --stat`, `ls`). The only writes are the suite directory contents, an optional `.gitignore` append, and pruning expired suites when `retainDays` is set (Stage 4). The single exception is the short-circuit's "implement directly" answer, which ends the blueprint before anything is written.
+- **Read-only on code.** Code access is `Read`, `Glob`, `Grep`, and read-only `Bash` (e.g. `git log`, `git diff --stat`, `ls`). The only writes are the suite directory contents and an optional `.gitignore` append. The single exception is the short-circuit's "implement directly" answer, which ends the blueprint before anything is written.
 - **The orchestrator owns the conversation.** Subagents cannot talk to the user; the interview, triage questions, and approval happen in this session. Subagents earn their isolation through parallelism (explore fan-out) or deliberate blindness (`gap-finder`, `qa-author`).
 - **The suite directory is the interface between agents.** Subagents read and write files in the suite dir; do not paste artifacts into prompts when a file path will do.
 - **Do not auto-invoke `/build`, `/qa`, or any other skill.** The handoff is the user's job — fresh sessions keep the executor's and QA's context clean.
@@ -96,7 +96,6 @@ The interview is done when you can state, without guessing:
 2. Derive a kebab-case slug (≤6 words) from the task essence.
 3. Create the suite dir: `mkdir -p <plansDir>/<timestamp>-<slug>/`.
 4. If the config's `gitignore` flag is true (default), and a `.gitignore` exists at the project root that does not already contain `<plansDir>/`, append `<plansDir>/` to it. If `.gitignore` does not exist, create it with that single line. Check before appending to avoid duplicates. If `gitignore` is false, skip this step.
-   - **Prune expired suites** — only if the config sets `retainDays` to a positive integer. Delete each directory directly under `<plansDir>` whose name starts with a `YYYY-MM-DD-HHMMSS` timestamp more than `retainDays` days old, except the suite just created. Skip any directory whose name doesn't start with a timestamp, and any with files tracked in git (`git ls-files <dir>` is non-empty) — tracked plans are the user's to delete. Print one line per removed suite: `🧹 Pruned <dir> (older than <retainDays> days)`.
 5. Read [CONTEXT-FORMAT.md](./CONTEXT-FORMAT.md) **now — not earlier, never from memory** — then write `context.md` in exact compliance: same frontmatter keys, same section names, same `EB-n` ID scheme. After writing, re-check the file against the format's Required list and fix any deviation.
 6. Read [PLAN-FORMAT.md](./PLAN-FORMAT.md) **now — not earlier, never from memory** — then write `plan.md` in exact compliance, and re-check it against the Required list and the line shapes. Key rules: interfaces and intent, never implementation bodies; zero design decisions left to the executor; `AC-n` are mechanical only; at most one mermaid diagram, under `## Architecture`.
 

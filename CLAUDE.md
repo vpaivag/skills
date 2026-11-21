@@ -17,7 +17,7 @@ Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on dema
 - **Companion files live beside SKILL.md.** Some skills reference siblings (e.g. `skills/blueprint/CONTEXT-FORMAT.md`, `skills/blueprint/PLAN-FORMAT.md`, `skills/blueprint/QA-FORMAT.md`, `skills/blueprint/GRILLING.md`). Don't move or rename them without updating the references inside `SKILL.md` and `agents/*.md`.
 - **`*-FORMAT.md` files are contracts, enforced just-in-time.** Skills and agents must instruct reading the format file immediately before writing its artifact ("now — not earlier, never from memory") and validating the written file against the format's Required list. Artifact formats use real YAML frontmatter and stable IDs (`EB-n`, `AC-n`, `B-n`) — never the retired `> **Field:**` blockquote style. Exception: formats whose artifact lives in an external tool rather than on disk (`skills/issue/ISSUE-FORMAT.md`, `skills/project/PROJECT-FORMAT.md` → a Linear description) skip frontmatter and IDs; the just-in-time read and Required-list validation still apply.
 - **Preserve the user's voice in skill prose.** Don't rewrite phrasing into a different style — the wording in each `SKILL.md` is intentional.
-- **Static assets and vanilla client-side JS only.** `assets/visual/` may hold CSS, dependency-free browser JS, HTML templates, the vendored `mermaid.min.js` (plugin-side only — never copied into suite dirs; opt-in per the rule in `assets/visual/BLOCKS.md`), and exactly one shell script: `render.sh`, a dependency-free POSIX `sh` embed step that builds `visual.html` without an agent. No build step, no package managers, no runtime dependencies, no servers, no CI scaffolding.
+- **Static assets and vanilla client-side JS only.** `assets/visual/` may hold CSS, dependency-free browser JS, HTML templates, the vendored `mermaid.min.js` (plugin-side only — never copied into suite dirs; opt-in per the rule in `assets/visual/BLOCKS.md`), and one shell script: `render.sh`, a dependency-free POSIX `sh` embed step that builds `visual.html` without an agent. The only other script is `hooks/prune-plans.sh`, the dependency-free POSIX `sh` `SessionStart` hook (wired in `hooks/hooks.json`) that prunes plan suites older than `retainDays` — opt-in, never touches anything git tracks. No build step, no package managers, no runtime dependencies, no servers, no CI scaffolding.
 - **Plan formats and the renderer change together.** `render.js` parses the line shapes in `skills/blueprint/PLAN-FORMAT.md`, `CONTEXT-FORMAT.md`, and `QA-FORMAT.md`. Changing a section name or line shape means changing its parser in the same commit.
 - **Vendored skills stay verbatim.** `skills/blueprint/GRILLING.md` is mattpocock/skills' `grilling` (MIT), copied verbatim with its notice. Re-sync it by hand from upstream and record the version in its header — never edit the body.
 - **Split context is the pipeline's design principle.** `qa-author` sees only `context.md`; `gap-finder` sees only `plan.md`; `/qa` never reads `plan.md`. Don't "improve" a skill or agent by giving a blind role more context — the blindness is the feature.
@@ -29,6 +29,9 @@ Each skill is a self-contained `SKILL.md` under `skills/<name>/`, loaded on dema
 .claude-plugin/
   plugin.json        # plugin manifest, lists skills + version
   marketplace.json   # marketplace manifest; no version field (see hard rules)
+hooks/
+  hooks.json         # SessionStart → prune-plans.sh
+  prune-plans.sh     # opt-in retainDays pruning of plan suites
 agents/
   gap-finder.md      # blind goldfish plan reviewer, one lens per spawn (sonnet)
   qa-author.md       # blind QA-plan author (inherit)

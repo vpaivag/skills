@@ -32,7 +32,7 @@ This skill prefers the `AskUserQuestion` tool for interactive prompts. If `AskUs
 
 - `plansDir`: string, relative or absolute path. Default `.claude/plans`. Relative paths resolve against the **project root** (the repository), never the user's home `~/.claude/`. Absolute paths are allowed (some users keep plans outside the repo).
 - `gitignore`: boolean. If `true`, skills ensure `plansDir` is in `.gitignore`. If `false`, skills do not touch `.gitignore`.
-- `retainDays`: optional positive integer. When set, `/blueprint` deletes suites whose timestamped directory name is older than this many days each time it creates a new suite — never a suite with files tracked in git. Omit it to keep suites forever (the default). This skill writes the key only when the user picks a number.
+- `retainDays`: optional positive integer. When set, the plugin's `SessionStart` hook (`hooks/prune-plans.sh`) deletes suites whose timestamped directory name is older than this many days every time a Claude Code session starts in the repo — never a suite with files tracked in git. The hook ships with the plugin install only; a skills-CLI install records the key but nothing prunes. Omit it to keep suites forever (the default). This skill writes the key only when the user picks a number.
 
 ## Phases
 
@@ -53,7 +53,7 @@ Ask three questions via `AskUserQuestion`, one at a time, recommended-answer opt
 
 1. **Plans directory.** Options: `.claude/plans` (Recommended), `Other` (user types a path). Accept absolute or relative paths.
 2. **Gitignore the plans directory?** Options: `Yes` (Recommended), `No`.
-3. **Delete old plans automatically?** "`/blueprint` can delete suites older than N days each time it starts a new one. Suites tracked in git are never deleted." Options: `Keep forever` (Recommended), `30 days`, `7 days`, `Other` (user types a number of days). Reject anything that isn't a positive integer and re-ask.
+3. **Delete old plans automatically?** "Old suites can be deleted automatically when a Claude Code session starts, once they are older than N days. Suites tracked in git are never deleted." Options: `Keep forever` (Recommended), `30 days`, `7 days`, `Other` (user types a number of days). Reject anything that isn't a positive integer and re-ask.
 
 ### Phase 3 — Write config
 
@@ -74,7 +74,7 @@ Print a summary:
 ✅ Config written: .claude/plans-config.json
    plansDir: <value>
    gitignore: <true|false>
-   retainDays: <n — suites older than n days are pruned by /blueprint | keep forever>
+   retainDays: <n — suites older than n days are pruned at session start | keep forever>
 
 <gitignore note if applicable>
 ```
@@ -86,5 +86,5 @@ End the turn.
 - Never write outside `.claude/plans-config.json` and `.gitignore`.
 - Never remove existing `.gitignore` lines.
 - Defaults must match the historical behavior (`.claude/plans`, gitignored, nothing pruned).
-- This skill never deletes suites itself — it only records `retainDays`; `/blueprint` does the pruning.
+- This skill never deletes suites itself — it only records `retainDays`; the `SessionStart` hook does the pruning.
 - Ask questions via `AskUserQuestion`; one question at a time; recommended-answer option first.
